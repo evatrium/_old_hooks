@@ -79,14 +79,14 @@ export const useForceUpdate = () => {
 ##################################
 ################################*/
 
-
-export const useMergeState = (initialState = {}) => {
+const shallowMerger = (prev, next) => ({...prev, ...next});
+export const useMergeState = (initialState = {}, merger = shallowMerger) => {
     const [state, setState] = useState(initialState);
 
     const mergeState = useCallback(update => {
         setState(prev => {
             const next = getStateUpdate(update, prev);
-            return {...prev, ...next}
+            return merger(prev, next);
         })
     }, []);
 
