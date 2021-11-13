@@ -1,0 +1,50 @@
+{
+  "name": "@iosio/hooks",
+  "version": "1.0.0",
+  "description": "react hooks",
+  "type": "module",
+  "source": "src/index.js",
+  "main": "./lib/iosio-hooks.js",
+  "umd:main": "./lib/iosio-hooks.umd.js",
+  "module": "./lib/iosio-hooks.module.js",
+  "unpkg": "./lib/iosio-hooks.umd.js",
+  "exports": {
+    "browser": "./lib/iosio-hooks.module.js",
+    "import": "./lib/iosio-hooks.mjs",
+    "require": "./lib/iosio-hooks.cjs",
+    "default": "./lib/iosio-hooks.modern.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iosio/hooks.git"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src",
+    "lib"
+  ],
+  "keywords": [
+    "react hooks",
+    "hooks",
+    "utilities"
+  ],
+  "scripts": {
+    "start": "wmr",
+    "build": "microbundle --jsx React.createElement --define process.env.NODE_ENV=production --name iosioHooks",
+    "test": "exit 0"
+  },
+  "peerDependencies": {
+    "@iosio/util": "^2.0.17",
+    "react": "^17.0.2",
+    "search-worker": "^1.0.8"
+  },
+  "devDependencies": {
+    "@iosio/react-router": "^1.0.12",
+    "microbundle": "^0.14.1",
+    "preact": "^10.5.15",
+    "wmr": "^3.7.2"
+  }
+}
