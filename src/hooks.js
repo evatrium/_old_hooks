@@ -317,10 +317,11 @@ export const useUncontrolledInputValue = onChange => {
 ##################################
 ################################*/
 
-export const useAsync = (asyncFunc) => {
+export const useAsync = (asyncFunc, options = {initialState: {}}) => {
     const isMountedRef = useIsMounted();
     let [{data, pending, error}, mergeState] = useMergeState({
-        data: undefined, pending: false, error: undefined
+        data: undefined, pending: false, error: undefined,
+        ...options.initialState
     });
     const execute = useCallback(async (...args) => {
         isMountedRef.current && mergeState({pending: true, error: undefined});
