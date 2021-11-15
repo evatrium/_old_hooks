@@ -37,7 +37,6 @@
     "test": "exit 0"
   },
   "peerDependencies": {
-    "@iosio/util": "^2.0.17",
     "react": "^17.0.2",
     "search-worker": "^1.0.8"
   },
@@ -46,5 +45,8 @@
     "microbundle": "^0.14.1",
     "preact": "^10.5.15",
     "wmr": "^3.7.2"
+  },
+  "dependencies": {
+    "@iosio/util": "^2.0.19"
   }
 }
