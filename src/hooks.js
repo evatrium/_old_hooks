@@ -19,11 +19,14 @@ import {SearchWorker} from "search-worker";
 
 ##################################
 ################################*/
-
+const EMPTY_ARRAY = [];
+const FUNCTION = () => undefined;
 
 let id = 1;
 export const useId = () => useMemo(() => id++, []);
-const EMPTY_ARRAY = [];
+
+
+export const useMemoObj = (obj) => useMemo(() => obj, Object.values(obj));
 
 /*################################
 ##################################
@@ -360,14 +363,15 @@ export const useUncontrolledInputValue = onChange => {
 ##################################
 ################################*/
 
-export const useAsync = (asyncFunc, options = {initialState: {}}) => {
+const useAsyncOption = {initialState: {}};
+export const useAsync = (asyncFunc, options = useAsyncOption) => {
     const isMountedRef = useIsMounted();
     let [{data, pending, error}, mergeState] = useMergeState({
-        data: undefined, pending: false, error: undefined,
+        data: null, pending: false, error: null,
         ...options.initialState
     });
     const execute = useCallback(async (...args) => {
-        isMountedRef.current && mergeState({pending: true, error: undefined});
+        isMountedRef.current && mergeState({pending: true, error: null});
         try {
             const result = await asyncFunc(...args);
             isMountedRef.current && mergeState({data: result, pending: false});
@@ -385,11 +389,66 @@ export const useAsync = (asyncFunc, options = {initialState: {}}) => {
     };
 
     return {
-        data, pending, error, execute,
-        mergeState, useExecuteEffect,
+        data, pending, error,
+        execute, useExecuteEffect,
+        mergeState,
     }
 }
 
+const AsyncTriedAndCaught = async () => ({data: null, error: null});
+
+export const useAsyncTC = (asyncWithTryCatch = AsyncTriedAndCaught, options = useAsyncOption) => {
+    const isMountedRef = useIsMounted();
+    let [{data, pending, error}, mergeState] = useMergeState({
+        data: null, pending: false, error: null,
+        ...options.initialState
+    });
+    const execute = useCallback(async (...args) => {
+        isMountedRef.current && mergeState({pending: true, error: null});
+        const {data, error} = await asyncWithTryCatch(...args);
+        isMountedRef.current && mergeState({data, error, pending: false});
+        return {data, error};
+    }, [asyncWithTryCatch, mergeState, isMountedRef]);
+
+    const useExecuteEffect = (...args) => {
+        useEffect(() => {
+            execute(...args);
+        }, [stringify(args)])
+    };
+
+    return {
+        data, pending, error,
+        execute, useExecuteEffect,
+        mergeState,
+    }
+}
+
+
+const Sub = (
+    args = EMPTY_ARRAY,
+    data = FUNCTION,
+    error = FUNCTION
+) => FUNCTION
+
+export const useSubscription = (
+    sub = Sub,
+    args = EMPTY_ARRAY
+) => {
+    const isMountedRef = useIsMounted();
+    const [{data, pending, error}, mergeState] = useMergeState({
+        data: null, pending: false, error: null
+    });
+
+    useEffect(() => {
+        mergeState({data, pending: true, error: null});
+        return sub(args,
+            data => isMountedRef.current && mergeState({data, pending: false, error: null}),
+            error => isMountedRef.current && mergeState({data: null, pending: false, error})
+        )
+    }, [...args]);
+
+    return useMemoObj({data, pending, error});
+}
 
 /*################################
 ##################################
@@ -548,7 +607,6 @@ export const useSearchWorkerBase = ({list = EMPTY_ARRAY, keys, debounce} = {}) =
     }), []);
 
     useDidUpdate(() => {
-        console.log('did update');
         instance.update({searchOptions: {keys}, list});
     }, [keys, list]);
 
