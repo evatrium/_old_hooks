@@ -7,7 +7,8 @@ import {
     isFunc, isObj,
     propsChanged,
     toggleSelection,
-    debounce, stringify, deepMergeObj
+    debounce, stringify, deepMergeObj,
+    localStore, eventListener
 } from "@iosio/util";
 
 import {SearchWorker} from "search-worker";
@@ -424,20 +425,29 @@ export const useAsyncTC = (asyncWithTryCatch = AsyncTriedAndCaught, options = us
 }
 
 
+/*################################
+##################################
+
+        EVENTS, SUBSCRIPTIONS
+
+##################################
+################################*/
+
 const Sub = (
     args = EMPTY_ARRAY,
     data = FUNCTION,
     error = FUNCTION
 ) => FUNCTION
 
+const initialSubscriptionState = {data: null, pending: false, error: null};
+
 export const useSubscription = (
     sub = Sub,
-    args = EMPTY_ARRAY
+    args = EMPTY_ARRAY,
+    initialState = initialSubscriptionState
 ) => {
     const isMountedRef = useIsMounted();
-    const [{data, pending, error}, mergeState] = useMergeState({
-        data: null, pending: false, error: null
-    });
+    const [{data, pending, error}, mergeState] = useMergeState(initialState);
 
     useEffect(() => {
         mergeState({data, pending: true, error: null});
@@ -449,6 +459,39 @@ export const useSubscription = (
 
     return useMemoObj({data, pending, error});
 }
+
+useSubscription.initialState = initialSubscriptionState;
+
+let storageListeners = [];
+const syncStorage = () => {
+    for (const setState of storageListeners) setState();
+};
+
+let storageEventListenerInitialized = false;
+const initStorageEventListener = () => {
+    if (!storageEventListenerInitialized) {
+        window.addEventListener('storage', syncStorage);
+        storageEventListenerInitialized = true;
+    }
+};
+
+export const useLocalStoreValue = (key) => {
+    const [value, set] = useState(() => localStore.getItem(key));
+
+    const setValue = useCallback((value) => {
+        localStore.setItem(key, value);
+        set(value);
+    }, [key])
+
+    useEffect(() => {
+        const updateStorage = () => set(localStore.getItem(key))
+        storageListeners.push(updateStorage);
+        initStorageEventListener();
+        return () => storageListeners.splice(storageListeners.indexOf(updateStorage), 1);
+    }, [key]);
+
+    return [value, setValue];
+};
 
 /*################################
 ##################################
