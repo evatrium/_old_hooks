@@ -636,10 +636,10 @@ const Searcher = (
     };
 };
 
-export const useSearchWorkerBase = ({list = EMPTY_ARRAY, keys, debounce} = {}) => {
+export const useSearchWorkerSearch = ({setResults, list = EMPTY_ARRAY, keys, debounce} = {}) => {
 
-    const [results, setResults] = useState(list);
     const mounted = useIsMounted();
+
     const resultsCallback = res => mounted.current && setResults(res);
 
     const instance = useMemo(() => Searcher({
@@ -655,10 +655,15 @@ export const useSearchWorkerBase = ({list = EMPTY_ARRAY, keys, debounce} = {}) =
 
     useWillUnmount(instance.reset);
 
-    return {
-        results,
-        search: instance.search
-    }
+    return instance.search
+
+};
+
+export const useSearchWorkerBase = ({list = EMPTY_ARRAY, keys, debounce} = {}) => {
+
+    const [results, setResults] = useState(list);
+    const search = useSearchWorkerSearch({setResults, list, keys, debounce});
+    return {results, search}
 
 };
 
