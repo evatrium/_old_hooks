@@ -476,7 +476,7 @@ const initStorageEventListener = () => {
 };
 
 export const useLocalStoreValue = (key, defaultValue) => {
-    const [value, set] = useState(() => localStore.getItem(key) || defaultValue);
+    const [value, set] = useState(() => localStore.getItem(key) || (isFunc(defaultValue) ? defaultValue() : defaultValue));
 
     const setValue = useCallback((value) => {
         localStore.setItem(key, value);
