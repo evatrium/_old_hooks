@@ -601,20 +601,28 @@ export const SearchWorkerAdaptor = (
         _instance = SearchWorker(_list, _searchOptions);
     };
 
-    const debouncedSearch = debounce(async () => {
+    const debouncedSearch = debounce(async (noResultsCallback) => {
         if (!_instance) createSearchInstance();
         _results = await _instance(_searchValue);
-        resultsCallback && resultsCallback(_results);
+        resultsCallback && !noResultsCallback && resultsCallback(_results);
         return _results;
     }, _debounce || 0);
 
-    const update = async ({list, searchOptions, searchValue, searchAfterUpdate = true} = {}) => {
+    const update = async (
+        {
+            list,
+            searchOptions,
+            searchValue,
+            searchAfterUpdate = true,
+            noResultsCallback
+        } = {}
+    ) => {
         cancelSearch();
         if (isArray(list)) _list = _results = list;
         if (isObj(searchOptions)) _searchOptions = searchOptions;
         if (isString(searchValue)) _searchValue = searchValue;
         createSearchInstance();
-        return searchAfterUpdate && await debouncedSearch()
+        return searchAfterUpdate && await debouncedSearch(noResultsCallback)
     }
 
     const search = async text => {
