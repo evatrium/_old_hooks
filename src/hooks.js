@@ -475,10 +475,10 @@ const initStorageEventListener = () => {
     }
 };
 
-export const useLocalStoreValue = (key, defaultValue) => {
-    const [value, set] = useState(() => localStore.getItem(key) || (isFunc(defaultValue) ? defaultValue() : defaultValue));
+export const useLocalStoreValue = (key, defaultValue, {setValue, value} = {}) => {
+    const [val, set] = useState(() => localStore.getItem(key) || (isFunc(defaultValue) ? defaultValue() : defaultValue));
 
-    const setValue = useCallback((value) => {
+    const setIt = useCallback((value) => {
         localStore.setItem(key, value);
         set(value);
     }, [key])
@@ -490,7 +490,7 @@ export const useLocalStoreValue = (key, defaultValue) => {
         return () => storageListeners.splice(storageListeners.indexOf(updateStorage), 1);
     }, [key]);
 
-    return [value, setValue];
+    return [val, setIt];
 };
 
 /*################################
@@ -571,7 +571,7 @@ export const useSelectionHandler = ({findById, defaultSelections = [], additiona
     }), deps);
 };
 
-const Searcher = (
+export const SearchWorkerAdaptor = (
     {
         list = [],
         searchOptions,
@@ -640,9 +640,9 @@ export const useSearchWorkerSearch = ({setResults, list = EMPTY_ARRAY, keys, deb
 
     const mounted = useIsMounted();
 
-    const resultsCallback = res => mounted.current && setResults(res);
+    const resultsCallback = res => mounted.current && setResults && setResults(res);
 
-    const instance = useMemo(() => Searcher({
+    const instance = useMemo(() => SearchWorkerAdaptor({
         list: list,
         searchOptions: {keys},
         resultsCallback,
