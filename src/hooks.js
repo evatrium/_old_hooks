@@ -102,7 +102,7 @@ export const createGlobalState = (state = {}) => {
 
     let listeners = [];
 
-    let prevState = {...state};
+    let prevState = {...(isFunc(state) ? state() : state)};
 
     const getState = () => state;
 
@@ -612,7 +612,7 @@ export const SearchWorkerAdaptor = (
         cancelSearch();
         if (isArray(list)) _list = _results = list;
         if (isObj(searchOptions)) _searchOptions = searchOptions;
-        if(isString(searchValue)) _searchValue = searchValue;
+        if (isString(searchValue)) _searchValue = searchValue;
         createSearchInstance();
         return await debouncedSearch()
     }
