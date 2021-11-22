@@ -8,7 +8,7 @@ import {
     propsChanged,
     toggleSelection,
     debounce, stringify, deepMergeObj,
-    localStore, eventListener, isString
+    localStore, eventListener, isString, deepMerge
 } from "@iosio/util";
 
 import {SearchWorker} from "search-worker";
@@ -98,7 +98,7 @@ export const useMergeState = (initialState = {}, merger = shallowMerger) => {
 }
 
 
-export const createGlobalState = (state = {}) => {
+export const createGlobalState = (state = {}, {merger = deepMerge} = {}) => {
 
     let listeners = [];
 
@@ -131,7 +131,7 @@ export const createGlobalState = (state = {}) => {
     };
 
     const mergeState = (updater, ignoreUpdate = false) => {
-        setState(deepMergeObj(state, getStateUpdate(updater, state)), ignoreUpdate);
+        setState(merger(state, getStateUpdate(updater, state)), ignoreUpdate);
     };
 
     const useSelector = (selector = x => x, {shouldUpdate = propsChanged} = {}) => {
