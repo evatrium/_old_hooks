@@ -8,7 +8,7 @@ import {
     propsChanged,
     toggleSelection,
     debounce, stringify, deepMergeObj,
-    localStore, eventListener
+    localStore, eventListener, isString
 } from "@iosio/util";
 
 import {SearchWorker} from "search-worker";
@@ -608,10 +608,11 @@ export const SearchWorkerAdaptor = (
         return _results;
     }, _debounce || 0);
 
-    const update = async ({list, searchOptions} = {}) => {
+    const update = async ({list, searchOptions, searchValue} = {}) => {
         cancelSearch();
         if (isArray(list)) _list = _results = list;
         if (isObj(searchOptions)) _searchOptions = searchOptions;
+        if(isString(searchValue)) _searchValue = searchValue;
         createSearchInstance();
         return await debouncedSearch()
     }
