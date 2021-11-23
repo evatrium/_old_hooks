@@ -98,7 +98,7 @@ export const useMergeState = (initialState = {}, merger = shallowMerger) => {
 }
 
 
-export const createGlobalState = (state = {}, {merger = deepMerge} = {}) => {
+export const createGlobalState = (state = {}, {merger = shallowMerger} = {}) => {
 
     let listeners = [];
 
