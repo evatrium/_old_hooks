@@ -212,6 +212,24 @@ export const useForceUpdateInterval = ({time = 1000, immediate} = {}) => {
     return useInterval(fu, {time, immediate});
 }
 
+export const useTimeoutBooleanTrigger = ({time = 500, defaultBoolean = false, callback}) => {
+    const [bool, setBool] = useState(defaultBoolean);
+    const isMountedRef = useIsMounted();
+    const timeout = useRef();
+    const trigger = useCallback(({callback: cb}) =>
+        new Promise(resolve => {
+            cb = cb || callback;
+            clearTimeout(timeout.current);
+            if (!defaultBoolean) setBool(!defaultBoolean);
+            timeout.current = setTimeout(() => {
+                isMountedRef.current && setBool(defaultBoolean);
+                cb && cb();
+                resolve();
+            }, time);
+        }), []);
+    return [bool, trigger];
+}
+
 
 /*################################
 ##################################
@@ -228,7 +246,6 @@ export const useToggle = (defaultBool) => {
     }, [setBool]);
     return useMemo(() => [bool, toggle], [bool, toggle]);
 }
-
 
 export const useAriaCheckboxState = (defaultBool) => {
     const [bool, toggle] = useToggle(defaultBool);
@@ -275,7 +292,6 @@ export const useAriaMenuState = ({ariaName = 'menu', contents = 'items'} = {}) =
         menuProps,
     }
 }
-
 
 export const useUncontrolledInputValue = onChange => {
     const valueRef = useRef('');
@@ -425,6 +441,45 @@ export const useAsyncTC = (asyncWithTryCatch = AsyncTriedAndCaught, options = us
 }
 
 
+export const useLoaded = ({crossOrigin, referrerPolicy, src, srcSet} = {}) => {
+    const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        if (!src && !srcSet) {
+            return undefined;
+        }
+
+        setLoaded(false);
+
+        let active = true;
+        const image = new Image();
+        image.onload = () => {
+            if (!active) {
+                return;
+            }
+            setLoaded('loaded');
+        };
+        image.onerror = () => {
+            if (!active) {
+                return;
+            }
+            setLoaded('error');
+        };
+        image.crossOrigin = crossOrigin;
+        image.referrerPolicy = referrerPolicy;
+        image.src = src;
+        if (srcSet) {
+            image.srcset = srcSet;
+        }
+
+        return () => {
+            active = false;
+        };
+    }, [crossOrigin, referrerPolicy, src, srcSet]);
+
+    return loaded;
+}
+
 /*################################
 ##################################
 
@@ -492,6 +547,9 @@ export const useLocalStoreValue = (key, defaultValue, {setValue, value} = {}) =>
 
     return [val, setIt];
 };
+
+export const useEvent = (toOrArrConf, ev, cb, deps = EMPTY_ARRAY) =>
+    useEffect(() => eventListener(toOrArrConf?.current || toOrArrConf, ev, cb), deps);
 
 /*################################
 ##################################
@@ -760,3 +818,49 @@ export const useForkRef = (refA, refB) => {
 //     const isMountedRef = useIsMounted();
 // }
 
+
+/*################################
+##################################
+
+            Misc.
+
+##################################
+################################*/
+
+export const useIntersection = ({disabled, rootMargin = '-150px', eagerTimeout, once, ref}, onChange) => {
+
+    const [intersecting, setIntersecting] = useState(() => !!disabled);
+
+    useEffect(() => {
+        if (disabled) return;
+        var timeout,
+
+            disconnectObserver = () => {
+                clearTimeout(timeout);
+                observer && observer.disconnect();
+                observer = null;
+            },
+
+            observer = new IntersectionObserver(([{isIntersecting}]) => {
+                clearTimeout(timeout);
+                isIntersecting && once && disconnectObserver();
+                setIntersecting(isIntersecting);
+                onChange && onChange(isIntersecting);
+            }, {rootMargin});
+
+        ref && ref.current && observer.observe(ref.current);
+
+        if (eagerTimeout) {
+            timeout = setTimeout(() => {
+                disconnectObserver();
+                setIntersecting(true);
+                onChange && onChange(true);
+            }, eagerTimeout)
+        }
+
+        return disconnectObserver;
+
+    }, [disabled]);
+
+    return intersecting;
+};
