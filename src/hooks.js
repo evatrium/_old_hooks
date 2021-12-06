@@ -230,6 +230,23 @@ export const useTimeoutBooleanTrigger = ({time = 500, defaultBoolean = false, ca
     return [bool, trigger];
 }
 
+export const useDebounce = (fn, wait = 166) => {
+    const isMountedRef = useIsMounted();
+    const clearRef = useRef(null);
+    return useMemo(() => {
+        clearRef.current && clearRef.current();
+        const debounced = debounce((...args) => {
+            if (!isMountedRef.current) {
+                debounced.clear();
+                return
+            }
+            fn && fn(...args);
+        }, wait);
+        clearRef.current = debounced.clear
+        return debounced;
+    }, [isMountedRef.current, fn, wait]);
+}
+
 
 /*################################
 ##################################
@@ -830,7 +847,7 @@ export const useForkRef = (refA, refB) => {
 export const useIntersection = ({disabled, rootMargin = '-150px', eagerTimeout, once, ref}, onChange) => {
 
     const [intersecting, setIntersecting] = useState(() => !!disabled);
-
+    const isMountedRef = useIsMounted();
     useEffect(() => {
         if (disabled) return;
         var timeout,
@@ -844,8 +861,10 @@ export const useIntersection = ({disabled, rootMargin = '-150px', eagerTimeout, 
             observer = new IntersectionObserver(([{isIntersecting}]) => {
                 clearTimeout(timeout);
                 isIntersecting && once && disconnectObserver();
-                setIntersecting(isIntersecting);
-                onChange && onChange(isIntersecting);
+                if(isMountedRef.current){
+                    setIntersecting(isIntersecting);
+                    onChange && onChange(isIntersecting);
+                }
             }, {rootMargin});
 
         ref && ref.current && observer.observe(ref.current);
@@ -853,8 +872,10 @@ export const useIntersection = ({disabled, rootMargin = '-150px', eagerTimeout, 
         if (eagerTimeout) {
             timeout = setTimeout(() => {
                 disconnectObserver();
-                setIntersecting(true);
-                onChange && onChange(true);
+                if(isMountedRef.current){
+                    setIntersecting(true);
+                    onChange && onChange(true);
+                }
             }, eagerTimeout)
         }
 
@@ -864,3 +885,21 @@ export const useIntersection = ({disabled, rootMargin = '-150px', eagerTimeout, 
 
     return intersecting;
 };
+
+export const useWindowSize = () => {
+    const isMountedRef = useIsMounted();
+    const [{width, height}, mergeState] = useMergeState({
+        height: window.innerHeight,
+        width: window.innerWidth
+    });
+    const handleResize = useCallback(() => {
+        isMountedRef.current && mergeState({
+            height: window.innerHeight,
+            width: window.innerWidth
+        })
+    }, []);
+    const debouncedResize = useDebounce(handleResize);
+    useEvent(window, 'resize', debouncedResize);
+    useEffect(debouncedResize, [debouncedResize]);
+    return {width, height};
+}
