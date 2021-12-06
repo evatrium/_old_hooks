@@ -7,8 +7,9 @@ import {
     isFunc, isObj,
     propsChanged,
     toggleSelection,
-    debounce, stringify, deepMergeObj,
-    localStore, eventListener, isString, deepMerge
+    debounce, stringify,
+    localStore, eventListener, isString,
+    isBrowser
 } from "@iosio/util";
 
 import {SearchWorker} from "search-worker";
@@ -37,7 +38,7 @@ export const useMemoObj = (obj) => useMemo(() => obj, Object.values(obj));
 ##################################
 ################################*/
 
-export const useEnhancedEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+export const useEnhancedEffect = isBrowser ? useLayoutEffect : useEffect;
 
 export const useIsMounted = () => {
     const isMounted = useRef(false);
@@ -839,7 +840,7 @@ export const useForkRef = (refA, refB) => {
 /*################################
 ##################################
 
-            Misc.
+  SIZING / DIMENSIONS / POSITIONING
 
 ##################################
 ################################*/
@@ -861,7 +862,7 @@ export const useIntersection = ({disabled, rootMargin = '-150px', eagerTimeout, 
             observer = new IntersectionObserver(([{isIntersecting}]) => {
                 clearTimeout(timeout);
                 isIntersecting && once && disconnectObserver();
-                if(isMountedRef.current){
+                if (isMountedRef.current) {
                     setIntersecting(isIntersecting);
                     onChange && onChange(isIntersecting);
                 }
@@ -872,7 +873,7 @@ export const useIntersection = ({disabled, rootMargin = '-150px', eagerTimeout, 
         if (eagerTimeout) {
             timeout = setTimeout(() => {
                 disconnectObserver();
-                if(isMountedRef.current){
+                if (isMountedRef.current) {
                     setIntersecting(true);
                     onChange && onChange(true);
                 }
@@ -886,7 +887,7 @@ export const useIntersection = ({disabled, rootMargin = '-150px', eagerTimeout, 
     return intersecting;
 };
 
-export const useWindowSize = () => {
+export const useWindowSize = ({debounce = 166} = {}) => {
     const isMountedRef = useIsMounted();
     const [{width, height}, mergeState] = useMergeState({
         height: window.innerHeight,
@@ -898,8 +899,53 @@ export const useWindowSize = () => {
             width: window.innerWidth
         })
     }, []);
-    const debouncedResize = useDebounce(handleResize);
+    const debouncedResize = useDebounce(handleResize, debounce);
     useEvent(window, 'resize', debouncedResize);
     useEffect(debouncedResize, [debouncedResize]);
     return {width, height};
+}
+
+
+const supportMatchMedia = isBrowser && typeof window.matchMedia !== 'undefined';
+const matchMedia = supportMatchMedia ? window.matchMedia : null;
+const getQueries = (screens, breakpoints) =>
+    screens.map((width) => {
+        const w = width.toLowerCase();
+        const size = w.substring(0, 2), dir = w.substring(2, w.length);
+        let q = (size in breakpoints.values) && (breakpoints[dir] || breakpoints.up)(size);
+        if (q) {
+            q = q.replace(/^@media( ?)/m, '');
+            return [width, q];
+        }
+    }).filter(Boolean);
+
+export const createUseMediaQueriesHook = (themeBreakpoints) => {
+
+    return (...screens) => {
+
+        let breakpoints = themeBreakpoints;
+        if (Array.isArray(screens[0])) {
+            screens = screens[0];
+            breakpoints = screens[1];
+        }
+
+        const mounted = useIsMounted();
+        const queries = useMemo(() => getQueries(screens, breakpoints), [...screens]);
+        const [state, merge] = useMergeState(() =>
+            queries.reduce((acc, [w, q]) => ((acc[w] = matchMedia(q).matches), acc), {})
+        );
+        useEnhancedEffect(() => {
+            const unlisten = [], initialSet = {};
+            queries.forEach(([w, q]) => {
+                const queryList = matchMedia(q);
+                initialSet[w] = queryList.matches;
+                const updateMatch = () => mounted.current && merge({[w]: queryList.matches});
+                queryList.addListener(updateMatch);
+                unlisten.push(() => queryList.removeListener(updateMatch));
+            });
+            merge(initialSet);
+            return () => unlisten.forEach(f => f());
+        }, [queries])
+        return state;
+    }
 }
