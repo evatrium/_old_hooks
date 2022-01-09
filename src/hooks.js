@@ -9,7 +9,7 @@ import {
     toggleSelection,
     debounce, stringify,
     localStore, eventListener, isString,
-    isBrowser
+    isBrowser, getIn, setIn, jsonParse
 } from "@iosio/util";
 
 import {SearchWorker} from "search-worker";
@@ -72,7 +72,7 @@ const newObj = () => Object.create(null);
 export const useForceUpdate = () => {
     const isMounted = useIsMounted();
     const [, set] = useState(newObj);
-    return useCallback(() => isMounted.current && set(newObj()), [set, isMounted]);
+    return useCallback(() => isMounted.current && set(newObj()), []);
 }
 
 
@@ -134,6 +134,13 @@ export const createGlobalState = (state = {}, {merger = shallowMerger} = {}) => 
     const mergeState = (updater, ignoreUpdate = false) => {
         setState(merger(state, getStateUpdate(updater, state)), ignoreUpdate);
     };
+
+    const mergeInPath = (path, updater, ignoreUpdate = false) => {
+        let prevBranchState = getIn(state, path, state);
+        const branchUpdate = getStateUpdate(updater, prevBranchState);
+        const nextState = setIn(state, path, merger(prevBranchState, branchUpdate));
+        setState(nextState, ignoreUpdate);
+    }
 
     const useSelector = (selector = x => x, {shouldUpdate = propsChanged} = {}) => {
         const mountedState = useIsMounted();
@@ -217,7 +224,7 @@ export const useTimeoutBooleanTrigger = ({time = 500, defaultBoolean = false, ca
     const [bool, setBool] = useState(defaultBoolean);
     const isMountedRef = useIsMounted();
     const timeout = useRef();
-    const trigger = useCallback(({callback: cb}) =>
+    const trigger = useCallback(({callback: cb} = {}) =>
         new Promise(resolve => {
             cb = cb || callback;
             clearTimeout(timeout.current);
@@ -536,8 +543,8 @@ export const useSubscription = (
 useSubscription.initialState = initialSubscriptionState;
 
 let storageListeners = [];
-const syncStorage = () => {
-    for (const setState of storageListeners) setState();
+const syncStorage = (e) => {
+    for (const setState of storageListeners) setState(e);
 };
 
 let storageEventListenerInitialized = false;
@@ -557,7 +564,12 @@ export const useLocalStoreValue = (key, defaultValue, {setValue, value} = {}) =>
     }, [key])
 
     useEffect(() => {
-        const updateStorage = () => set(localStore.getItem(key))
+        const updateStorage = (e) => {
+            if (e.storageArea === localStorage && e.key === key) {
+                const {data} = jsonParse(e.newValue);
+                set(data || null);
+            }
+        }
         storageListeners.push(updateStorage);
         initStorageEventListener();
         return () => storageListeners.splice(storageListeners.indexOf(updateStorage), 1);
