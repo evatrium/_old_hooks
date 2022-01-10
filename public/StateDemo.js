@@ -1,4 +1,4 @@
-import {createGlobalState} from '../src';
+import {createState} from '../src';
 
 const initialState = {
     derp: {
@@ -15,7 +15,7 @@ const initialState = {
 };
 
 
-const state = createGlobalState(initialState, {persist: {key: 'stateDemo'}});
+const state = createState(initialState, {persist: {key: 'stateDemo'}});
 
 const Foo = () => {
     const [foo, merge] = state.useSelector('derp.foo');

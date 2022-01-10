@@ -99,7 +99,7 @@ export const useMergeState = (initialState = {}, merger = shallowMerger) => {
 }
 
 
-export const createGlobalState = (state = {}, {merger = shallowMerger, persist} = {}) => {
+export const createState = (state = {}, {merger = shallowMerger, persist} = {}) => {
 
     const originalState = deepCopy(state);
     state = deepCopy(state);
