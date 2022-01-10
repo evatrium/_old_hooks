@@ -9,7 +9,7 @@ import {
     toggleSelection,
     debounce, stringify,
     localStore, eventListener, isString,
-    isBrowser, getIn, setIn, jsonParse
+    isBrowser, getIn, setIn, jsonParse, deepCopy, CreateLocalStore
 } from "@iosio/util";
 
 import {SearchWorker} from "search-worker";
@@ -99,13 +99,62 @@ export const useMergeState = (initialState = {}, merger = shallowMerger) => {
 }
 
 
-export const createGlobalState = (state = {}, {merger = shallowMerger} = {}) => {
+export const createGlobalState = (state = {}, {merger = shallowMerger, persist} = {}) => {
+
+    const originalState = deepCopy(state);
+    state = deepCopy(state);
+
+    let storage;
+    let {persistor, debounceSet, key: storageKey, namespace} = persist || {};
+    let unsubscribeStorage = () => 0;
+    let resetting = false;
+
+    const isPersisted = isObj(persist) && isString(storageKey);
+
+    const subscribeStorage = () => {
+        unsubscribeStorage();
+        unsubscribeStorage = storage?.subscribe ? storage?.subscribe(({storageArea, key, newValue}) => {
+            if (resetting) return;
+            if (storageArea === localStorage && key === storageKey) {
+                const oldValue = JSON.stringify(state);
+                if (oldValue !== newValue) {
+                    const {data} = jsonParse(newValue);
+                    setState(data || originalState);
+                }
+            }
+        }) : () => 0;
+    }
+
+    if (isPersisted) {
+        storage = persistor || CreateLocalStore({namespace: namespace || '', debounceSet: debounceSet || 200});
+        const stored = storage.getItem(storageKey);
+        if (isObj(stored)) state = stored;
+        subscribeStorage();
+    }
+
+    const clearStorage = () => storage.removeItem(storageKey);
 
     let listeners = [];
 
     let prevState = {...(isFunc(state) ? state() : state)};
 
     const getState = () => state;
+
+    const reset = (
+        {
+            initialState,
+            clearStorage: clear = true,
+            ignoreNotify = false,
+            unsubscribeStorage: unsub
+        } = {}) => {
+        resetting = true;
+        isPersisted && unsub && unsubscribeStorage();
+        const nextState = initialState ? deepCopy(initialState) : deepCopy(originalState);
+        isPersisted && clear && clearStorage();
+        setState(nextState, ignoreNotify);
+        resetting = false;
+    };
+
 
     const unsubscribe = f => {
         listeners = listeners.filter(l => l !== f);
@@ -122,19 +171,19 @@ export const createGlobalState = (state = {}, {merger = shallowMerger} = {}) => 
 
     const _setState = (next) => {
         prevState = {...state};
+        isPersisted && !resetting && storage.setItemDebounced(storageKey, next);
         state = next;
     };
 
-    const setState = (updater, ignoreUpdate = false) => {
+    const setState = (updater, ignoreNotify = false) => {
         const nextState = getStateUpdate(updater, state);
         _setState(nextState);
-        if (!ignoreUpdate) notify();
+        if (!ignoreNotify) notify();
     };
 
-    const mergeState = (updater, ignoreUpdate = false) => {
-        setState(merger(state, getStateUpdate(updater, state)), ignoreUpdate);
+    const mergeState = (updater, ignoreNotify = false) => {
+        setState(merger(state, getStateUpdate(updater, state)), ignoreNotify);
     };
-
 
     const select = (selector, state = getState()) => {
         if (isFunc(selector)) return select(selector(state), state);
@@ -152,12 +201,12 @@ export const createGlobalState = (state = {}, {merger = shallowMerger} = {}) => 
         return setIn(nextState, path, branchUpdate);
     };
 
-    const mergeInPath = (path, updater, ignoreUpdate = false) => {
+    const mergeInPath = (path, updater, ignoreNotify = false) => {
         let nextState = {...state};
         if (isFunc(path)) path = path(nextState);
         if (isString(path)) nextState = setInState(path, updater, nextState);
         if (isObj(path)) for (let key in path) nextState = setInState(nextState, key, path[key]);
-        setState(nextState, ignoreUpdate);
+        setState(nextState, ignoreNotify);
     };
 
     Object.assign(mergeState, {
@@ -186,15 +235,19 @@ export const createGlobalState = (state = {}, {merger = shallowMerger} = {}) => 
         select, mergeInPath, unsubscribe,
         subscribe, notify, setState, mergeState,
         useSelector, getState,
+        reset,
+        subscribeStorage,
+        unsubscribeStorage,
+        clearStorage
     };
 
     const createProviderAndHook = (additionalMethods = {}) => {
 
-        const StateContext = createContext({});
+        const value = Object.assign(methods, additionalMethods);
+
+        const StateContext = createContext(value);
 
         const useStateContext = () => useContext(StateContext);
-
-        const value = Object.assign(methods, additionalMethods);
 
         const StateProvider = ({children}) => (
             <StateContext.Provider value={value}>

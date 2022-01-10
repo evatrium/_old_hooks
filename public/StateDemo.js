@@ -1,6 +1,5 @@
 import {createGlobalState} from '../src';
 
-
 const initialState = {
     derp: {
         foo: 123,
@@ -9,13 +8,14 @@ const initialState = {
     some: {
         nested: {
             state: 'baz',
-            blob: 1
+            blob: 1,
+            arr: [0]
         }
     }
 };
 
 
-const state = createGlobalState(initialState);
+const state = createGlobalState(initialState, {persist: {key: 'stateDemo'}});
 
 const Foo = () => {
     const [foo, merge] = state.useSelector('derp.foo');
@@ -32,28 +32,41 @@ const Bar = () => {
     console.log('bar updated');
     return (
         <h1>
-            Bar: {bar}
+            Bar: {JSON.stringify(bar)}
         </h1>
     )
 };
 
 const SomeNestedState = () => {
 
-    const [{asdf, blob}, merge] = state.useSelector(() => ({
-        asdf: 'some.nested.state',
-        blob: 'some.nested.blob'
+    const [{s, blob, arr, arr0}, merge] = state.useSelector(() => ({
+        s: 'some.nested.state',
+        blob: 'some.nested.blob',
+        arr: 'some.nested.arr',
+        arr0: 'some.nested.arr[0]'
     }));
 
-    console.log('some nested state updated');
+    console.log('some nested state updated', arr);
 
     return (
         <>
+            <br/>
             <h1>
-                Some Nested State: {asdf}
+                Some Nested State: {s}
             </h1>
+            <br/>
             <h2>
                 blob: {blob}
             </h2>
+            <br/>
+            <h3>
+                arr: {JSON.stringify(arr)}
+            </h3>
+            <br/>
+            <h3>
+                arr[0]: {arr0}
+            </h3>
+            <br/>
         </>
     )
 }
@@ -77,9 +90,21 @@ export default function StatePage() {
             <button onClick={() => state.mergeInPath(() => ({
                 'derp.foo': 500,
                 'some.nested.state': derp++,
-                'some.nested.blob': _ => _ + 1
+                'some.nested.blob': _ => _ + 1,
+                'some.nested.arr': arr => {
+                    return [...arr, derp];
+                }
             }))}>
                 BAZ
+            </button>
+
+            <br/>
+            <button onClick={() => state.mergeInPath({'some.nested.arr[0]': arr0 => (arr0 + 1)})}>
+                inc arr0
+            </button>
+            <br/>
+            <button onClick={() => state.reset({initialState})}>
+                reset
             </button>
         </>
     );
