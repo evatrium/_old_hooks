@@ -135,31 +135,79 @@ export const createGlobalState = (state = {}, {merger = shallowMerger} = {}) => 
         setState(merger(state, getStateUpdate(updater, state)), ignoreUpdate);
     };
 
+
+    const select = (selector, state = getState()) => {
+        if (isFunc(selector)) return select(selector(state), state);
+        if (isObj(selector)) {
+            let out = {};
+            for (let key in selector) out[key] = select(selector[key], state);
+            return out;
+        }
+        if (isString(selector)) return getIn(state, selector, state)
+    };
+
+    const setInState = (nextState, path, updater) => {
+        let branchUpdate = updater;
+        if (isFunc(updater)) branchUpdate = updater(getIn(state, path, state));
+        return setIn(nextState, path, branchUpdate);
+    };
+
     const mergeInPath = (path, updater, ignoreUpdate = false) => {
-        let prevBranchState = getIn(state, path, state);
-        const branchUpdate = getStateUpdate(updater, prevBranchState);
-        const nextState = setIn(state, path, merger(prevBranchState, branchUpdate));
+        let nextState = {...state};
+        if (isFunc(path)) path = path(nextState);
+        if (isString(path)) nextState = setInState(path, updater, nextState);
+        if (isObj(path)) for (let key in path) nextState = setInState(nextState, key, path[key]);
         setState(nextState, ignoreUpdate);
-    }
+    };
+
+    Object.assign(mergeState, {
+        mergeInPath,
+        setState,
+        mergeState
+    });
 
     const useSelector = (selector = x => x, {shouldUpdate = propsChanged} = {}) => {
         const mountedState = useIsMounted();
-        const [value, setValue] = useState(() => selector(state))
+        const [value, setValue] = useState(() => select(selector, state));
         useEffect(() => {
             const listener = (newState, prev) => {
                 if (!mountedState.current) return;
-                const nextState = selector(newState);
-                const prevState = selector(prev);
-                if (shouldUpdate(prevState, nextState)) setValue(nextState);
+                const prevState = select(selector, prev);
+                const nextState = select(selector, newState);
+                if (isString(selector)) (prevState !== nextState) && setValue(nextState);
+                else if (shouldUpdate(prevState, nextState)) setValue(nextState);
             };
             return subscribe(listener);
         }, []);
-        return [value, mergeState];
+        return [value, mergeState]; //destructure for more options [value, {mergeState, mergeInPath, setState}]
     };
 
+    const methods = {
+        select, mergeInPath, unsubscribe,
+        subscribe, notify, setState, mergeState,
+        useSelector, getState,
+    };
+
+    const createProviderAndHook = (additionalMethods = {}) => {
+
+        const StateContext = createContext({});
+
+        const useStateContext = () => useContext(StateContext);
+
+        const value = Object.assign(methods, additionalMethods);
+
+        const StateProvider = ({children}) => (
+            <StateContext.Provider value={value}>
+                {children}
+            </StateContext.Provider>
+        );
+
+        return [StateProvider, useStateContext]
+    }
+
     return {
-        unsubscribe, subscribe, notify,
-        setState, mergeState, useSelector, getState,
+        ...methods,
+        createProviderAndHook
     }
 }
 

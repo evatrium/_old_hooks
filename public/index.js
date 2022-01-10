@@ -2,6 +2,7 @@ import {h, render} from 'preact';
 import {SearchWorkerDemo} from "./lists/SearchWorkerDemo";
 import {SelectionsDemo} from "./lists/SelectionsDemo";
 import {ActiveLinkage, useRouter} from "@iosio/react-router";
+import StatePage from "./StateDemo";
 // note: ActiveLinkage is experimental
 
 const pathMap = {
@@ -20,6 +21,10 @@ const pathMap = {
     '/selections': {
         title: 'Selections',
         Route: SelectionsDemo
+    },
+    '/state':{
+        title: 'State',
+        Route: StatePage
     }
 }
 
