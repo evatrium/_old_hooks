@@ -288,7 +288,69 @@ export const useAriaMenuState = ({ariaName = 'menu', contents = 'items'} = {}) =
         triggerProps,
         menuProps,
     }
-}
+};
+
+export const useMuiMenuState = (
+    {
+        ariaName = 'menu',
+        contents = 'items',
+        listWidth = 'auto',
+        dropFrom = 'center',
+        menuProps: _menuProps = {}
+    } = {}) => {
+    const ref = useRef(null);
+    const id = useId();
+    const ariaId = `${ariaName}-${id}`;
+    const triggerId = `${ariaId}-trigger-${id}`;
+
+    const [isOpen, setOpen] = useState(false);
+
+    const open = useCallback(() => setOpen(true), [setOpen]);
+    const close = useCallback(() => setOpen(false), [setOpen]);
+
+    const triggerProps = {
+        id: triggerId,
+        'aria-haspopup': 'menu',
+        ...(isOpen && {
+            'aria-expanded': 'true',
+            'aria-controls': ariaId
+        }),
+        ref,
+        onClick: open,
+        onTouchStart: open,
+        'aria-label': `${ariaName}. ${isOpen ? 'Menu expanded' : `Select to access ${contents}`}`,
+    };
+
+    const menuProps = {
+        id: ariaId,
+        MenuListProps: {'aria-labelledby': triggerId,},
+        keepMounted: true,
+        onClose: close,
+        PaperProps: {style: {width: listWidth}},
+        getContentAnchorEl: null,
+        anchorEl: ref.current,
+        open: isOpen,
+        ..._menuProps,
+        anchorOrigin:{
+            vertical: 'bottom',
+            horizontal: dropFrom,
+            ..._menuProps.anchorOrigin
+        },
+        transformOrigin:{
+            vertical: 'top',
+            horizontal: dropFrom,
+            ..._menuProps.transformOrigin,
+        }
+    };
+
+    return {
+        isOpen,
+        open,
+        close,
+        triggerProps,
+        menuProps,
+    }
+};
 
 export const useUncontrolledInputValue = onChange => {
     const valueRef = useRef('');
