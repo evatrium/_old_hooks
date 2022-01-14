@@ -138,14 +138,14 @@ export const createState = (state = {}, {merger = shallowMerger, persist, onChan
         mergeState
     });
 
-    const useSelector = (selector = x => x, {shouldUpdate = propsChanged} = {}) => {
+    const useSelector = (selector, {shouldUpdate = propsChanged} = {}) => {
         const mountedState = useIsMounted();
         const [value, setValue] = useState(() => select(selector, state));
         useEffect(() => {
             const listener = (newState, prev) => {
                 if (!mountedState.current) return;
-                const prevState = select(selector, prev);
-                const nextState = select(selector, newState);
+                const prevState = selector ? select(selector, prev) : prev;
+                const nextState = selector ? select(selector, newState) : newState
                 if (isString(selector)) (prevState !== nextState) && setValue(nextState);
                 else if (shouldUpdate(prevState, nextState)) setValue(nextState);
             };
