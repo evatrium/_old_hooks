@@ -238,18 +238,26 @@ export const useAriaCheckboxState = (initial) => {
     const onChange = useCallback(e => set(e.target.checked), []);
     const reset = useCallback(() => set(initial), []);
 
-    const bind = {
+    const bindCheckBox = {
         role: 'checkbox',
         'aria-checked': checked,
         checked,
         onChange
     };
 
+    const bind = {
+        role: 'checkbox',
+        'aria-checked': checked,
+        checked,
+        onClick: useCallback(() => set(x => !x))
+    };
+
     return {
-        bind,
+        bindCheckBox,
         set,
         checked,
-        reset
+        reset,
+        bind,
     }
 };
 
@@ -331,12 +339,12 @@ export const useMuiMenuState = (
         anchorEl: ref.current,
         open: isOpen,
         ..._menuProps,
-        anchorOrigin:{
+        anchorOrigin: {
             vertical: 'bottom',
             horizontal: dropFrom,
             ..._menuProps.anchorOrigin
         },
-        transformOrigin:{
+        transformOrigin: {
             vertical: 'top',
             horizontal: dropFrom,
             ..._menuProps.transformOrigin,

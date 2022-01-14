@@ -103,6 +103,7 @@ export const createState = (state = {}, {merger = shallowMerger, persist, onChan
     };
 
     const select = (selector, state = getState()) => {
+        if (!selector) return state;
         if (isFunc(selector)) return select(selector(state), state);
         if (isObj(selector)) {
             let out = {};
@@ -112,7 +113,7 @@ export const createState = (state = {}, {merger = shallowMerger, persist, onChan
         if (isArray(selector)) return selector.map(s => select(s, state));
         if (isString(selector)) {
             let possibleMany = selector.split(',').map(s => s.trim()).filter(Boolean);
-            if(possibleMany.length > 1) return select(possibleMany, state);
+            if (possibleMany.length > 1) return select(possibleMany, state);
             return getIn(state, possibleMany[0], state);
         }
     };
