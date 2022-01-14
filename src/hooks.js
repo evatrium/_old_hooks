@@ -305,6 +305,7 @@ export const useMuiMenuState = (
 
     const [isOpen, setOpen] = useState(false);
 
+
     const open = useCallback(() => setOpen(true), [setOpen]);
     const close = useCallback(() => setOpen(false), [setOpen]);
 
@@ -323,11 +324,10 @@ export const useMuiMenuState = (
 
     const menuProps = {
         id: ariaId,
-        MenuListProps: {'aria-labelledby': triggerId,},
+        MenuListProps: {'aria-labelledby': triggerId},
         keepMounted: true,
         onClose: close,
         PaperProps: {style: {width: listWidth}},
-        getContentAnchorEl: null,
         anchorEl: ref.current,
         open: isOpen,
         ..._menuProps,
