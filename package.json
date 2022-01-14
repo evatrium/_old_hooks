@@ -47,7 +47,6 @@
     "wmr": "^3.7.2"
   },
   "dependencies": {
-    "@iosio/util": "^2.0.26",
-    "lodash.isequal": "^4.5.0"
+    "@iosio/util": "^2.0.28"
   }
 }

@@ -2,14 +2,14 @@ import {
     CreateLocalStore,
     deepCopy,
     getIn,
-    getStateUpdate,
+    getStateUpdate, isArray,
     isFunc,
     isObj,
     isString,
     jsonParse, propsChanged,
     setIn
 } from "@iosio/util";
-import {useEffect, useState} from "react";
+import {createContext, useEffect, useState} from "react";
 import {useIsMounted, shallowMerger} from "./hooks";
 
 
@@ -109,7 +109,12 @@ export const createState = (state = {}, {merger = shallowMerger, persist, onChan
             for (let key in selector) out[key] = select(selector[key], state);
             return out;
         }
-        if (isString(selector)) return getIn(state, selector, state)
+        if (isArray(selector)) return selector.map(s => select(s, state));
+        if (isString(selector)) {
+            let possibleMany = selector.split(',').map(s => s.trim()).filter(Boolean);
+            if(possibleMany.length > 1) return select(possibleMany, state);
+            return getIn(state, possibleMany[0], state);
+        }
     };
 
     const setInState = (nextState, path, updater) => {

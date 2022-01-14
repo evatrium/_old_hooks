@@ -11,7 +11,7 @@ const initialState = {
             blob: 1,
             arr: [0]
         }
-    }
+    },
 };
 
 
@@ -72,6 +72,18 @@ const SomeNestedState = () => {
 }
 
 
+const Arr = () => {
+    const [bar, merge] = state.useSelector(
+        'some.nested.state,'
+    );
+    console.log('Arr updated');
+    return (
+        <h1>
+            Arr: {JSON.stringify(bar)}
+        </h1>
+    )
+};
+
 let derp = 0;
 export default function StatePage() {
 
@@ -80,6 +92,11 @@ export default function StatePage() {
             <Foo/>
             <Bar/>
             <SomeNestedState/>
+
+            <Arr/>
+            <br/>
+
+
             <button onClick={() => state.mergeState(s => ({derp: {foo: s.derp.foo + 1}}))}>
                 FOO
             </button>
@@ -99,6 +116,7 @@ export default function StatePage() {
             </button>
 
             <br/>
+
             <button onClick={() => state.mergeInPath({'some.nested.arr[0]': arr0 => (arr0 + 1)})}>
                 inc arr0
             </button>

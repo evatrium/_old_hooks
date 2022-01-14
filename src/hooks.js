@@ -9,12 +9,13 @@ import {
     toggleSelection,
     debounce, stringify,
     localStore, eventListener, isString,
-    isBrowser, getIn, setIn, jsonParse, deepCopy, CreateLocalStore,
-    shallowEqual
+    isBrowser, jsonParse,
+    shallowEqual,
+    isEqual as deepEqual
 } from "@iosio/util";
 
 import {SearchWorker} from "search-worker";
-import deepEqual from 'lodash.isequal'
+
 
 /*################################
 ##################################
@@ -99,8 +100,6 @@ export const useMergeState = (initialState = {}, merger = shallowMerger) => {
 
     return [state, mergeState];
 }
-
-
 
 
 /*################################
@@ -233,13 +232,25 @@ export const useToggle = (defaultBool) => {
     return useMemo(() => [bool, toggle], [bool, toggle]);
 }
 
-export const useAriaCheckboxState = (defaultBool) => {
-    const [bool, toggle] = useToggle(defaultBool);
+export const useAriaCheckboxState = (initial) => {
+    const [checked, set] = useState(initial);
 
-    return useMemo(() => {
-        const bind = {role: 'checkbox', 'aria-checked': bool, onClick: toggle};
-        return [bind, toggle, bool]
-    }, [toggle, bool]);
+    const onChange = useCallback(e => set(e.target.checked), []);
+    const reset = useCallback(() => set(initial), []);
+
+    const bind = {
+        role: 'checkbox',
+        'aria-checked': checked,
+        checked,
+        onChange
+    };
+
+    return {
+        bind,
+        set,
+        checked,
+        reset
+    }
 };
 
 export const useAriaMenuState = ({ariaName = 'menu', contents = 'items'} = {}) => {
@@ -541,6 +552,36 @@ export const useLocalStoreValue = (key, defaultValue, {setValue, value} = {}) =>
 
 export const useEvent = (toOrArrConf, ev, cb, deps = EMPTY_ARRAY) =>
     useEffect(() => eventListener(toOrArrConf?.current || toOrArrConf, ev, cb), deps);
+
+
+export const useHover = () => {
+    const [hovered, set] = useState(false)
+    return {
+        hovered,
+        bind: {
+            onMouseEnter: () => set(true),
+            onMouseLeave: () => set(false),
+        },
+    }
+};
+
+export const useFocus = () => {
+    const [focused, set] = useState(false)
+    return {
+        focused,
+        bind: {
+            onFocus: () => set(true),
+            onBlur: () => set(false),
+        },
+    }
+};
+
+export const useOnlineStatus = () => {
+    const [online, set] = useState(navigator.onLine)
+    useEvent(window, 'online', () => set(true));
+    useEvent(window, 'offline', () => set(false));
+    return online
+}
 
 /*################################
 ##################################
