@@ -396,7 +396,7 @@ export const useUncontrolledInputValue = onChange => {
 };
 
 
-export const useField = (
+export const useTextField = (
     {
         label: initialLabel = '',
         value: initialValue = '',
