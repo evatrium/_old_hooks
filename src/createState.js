@@ -127,7 +127,7 @@ export const createState = (state = {}, {merger = shallowMerger, persist, onChan
     const mergeInPath = (path, updater, ignoreNotify = false) => {
         let nextState = {...state};
         if (isFunc(path)) path = path(nextState);
-        if (isString(path)) nextState = setInState(path, updater, nextState);
+        if (isString(path)) nextState = setInState(nextState, path, updater);
         if (isObj(path)) for (let key in path) nextState = setInState(nextState, key, path[key]);
         setState(nextState, ignoreNotify);
     };

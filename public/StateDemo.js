@@ -1,6 +1,7 @@
 import {createState} from '../src';
 
 const initialState = {
+    array: [{id: 1, name: 'foo'}],
     derp: {
         foo: 123,
     },
@@ -71,6 +72,25 @@ const SomeNestedState = () => {
     )
 }
 
+const MrArray = () => {
+    const [arr] = state.useSelector('array');
+
+    return (
+        <>
+            <h3>
+                arrrraayyyy {JSON.stringify(arr)}
+            </h3>
+            <br/>
+            <button onClick={() => {
+                state.mergeInPath('array[0]', {id: 1, name: 'bar'})
+            }}>
+                merge in path
+            </button>
+
+            <br/>
+        </>
+    )
+}
 
 const Arr = () => {
     const [bar, merge] = state.useSelector(
@@ -78,9 +98,11 @@ const Arr = () => {
     );
     console.log('Arr updated');
     return (
-        <h1>
-            Arr: {JSON.stringify(bar)}
-        </h1>
+        <>
+            <h1>
+                Arr: {JSON.stringify(bar)}
+            </h1>
+        </>
     )
 };
 
@@ -94,6 +116,9 @@ export default function StatePage() {
             <SomeNestedState/>
 
             <Arr/>
+            <br/>
+
+            <MrArray/>
             <br/>
 
 
@@ -114,6 +139,7 @@ export default function StatePage() {
             }))}>
                 BAZ
             </button>
+
 
             <br/>
 
