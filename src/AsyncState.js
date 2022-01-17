@@ -118,7 +118,6 @@ export const AsyncState = (
         const [localState, mergeLocal] = useMergeState(() => {
             let state = getState()[argsKeyRef.current] || asyncStateTemplate();
             if (immediate) state = pendingAsyncState(state);
-
             // silently initialize the state ????
             mergeState(
                 {[argsKeyRef.current]: state},

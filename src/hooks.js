@@ -396,49 +396,49 @@ export const useUncontrolledInputValue = onChange => {
 };
 
 
-// const useField =
-//     ({
-//          label: initialLabel = '',
-//          value: initialValue = '',
-//          errorText: initialErrorText = '',
-//          helperText: initialHelperText = '',
-//
-//      } = {}) => {
-//
-//         const [{label, value, errorText, helperText}, mergeState] = useMergeState({
-//             label: initialLabel,
-//             value: initialValue,
-//             errorText: initialErrorText,
-//             helperText: initialHelperText
-//         });
-//
-//         const onChange = useCallback(e => mergeState({value: e.target.value}), []);
-//
-//         return {
-//             label,
-//             value,
-//             errorText,
-//             helperText,
-//             mergeState,
-//             onChange,
-//             reset: () => mergeState({
-//                 label: initialLabel,
-//                 value: initialValue,
-//                 errorText: initialErrorText,
-//                 helperText: initialHelperText
-//             }),
-//             textFieldBind: {
-//                 label,
-//                 value,
-//                 errorText,
-//                 helperText
-//             },
-//             bind: {
-//                 value,
-//                 onChange,
-//             },
-//         }
-//     }
+export const useField = (
+    {
+        label: initialLabel = '',
+        value: initialValue = '',
+        errorText: initialErrorText = '',
+        helperText: initialHelperText = '',
+
+    } = {}) => {
+
+    const [{label, value, errorText, helperText}, mergeState] = useMergeState({
+        label: initialLabel,
+        value: initialValue,
+        errorText: initialErrorText,
+        helperText: initialHelperText
+    });
+
+    const onChange = useCallback(e => mergeState({value: e.target.value}), []);
+
+    return {
+        label,
+        value,
+        errorText,
+        helperText,
+        mergeState,
+        onChange,
+        reset: () => mergeState({
+            label: initialLabel,
+            value: initialValue,
+            errorText: initialErrorText,
+            helperText: initialHelperText
+        }),
+        textFieldBind: {
+            label,
+            value,
+            errorText,
+            helperText
+        },
+        bind: {
+            value,
+            onChange,
+        },
+    }
+}
 /*################################
 ##################################
 
