@@ -99,12 +99,14 @@ export const createState = (state = {}, {merger = shallowMerger, persist, onChan
     };
 
     const mergeState = (updater, ignoreNotify = false) => {
-        setState(merger(state, getStateUpdate(updater, state)), ignoreNotify);
+        const update = getStateUpdate(updater, state);
+        const nextState = merger(state, update);
+        setState(nextState, ignoreNotify);
     };
 
     const select = (selector, state = getState()) => {
         if (!selector) return state;
-        if (isFunc(selector)) return select(selector(state), state);
+        if (isFunc(selector)) return selector(state);
         if (isObj(selector)) {
             let out = {};
             for (let key in selector) out[key] = select(selector[key], state);
@@ -142,11 +144,16 @@ export const createState = (state = {}, {merger = shallowMerger, persist, onChan
         const mountedState = useIsMounted();
         const [value, setValue] = useState(() => select(selector, state));
         useEffect(() => {
+            let simpleCompare = false;
+            // if the initial result of what is selected is not a standard object state tree
+            if(!isObj(value)) simpleCompare = true; // then just do a simple compare
+            // unless a shouldUpdate function is provided
+            if(shouldUpdate !== propsChanged) simpleCompare = false;
             const listener = (newState, prev) => {
                 if (!mountedState.current) return;
                 const prevState = selector ? select(selector, prev) : prev;
                 const nextState = selector ? select(selector, newState) : newState
-                if (isString(selector)) (prevState !== nextState) && setValue(nextState);
+                if (simpleCompare) (prevState !== nextState) && setValue(nextState);
                 else if (shouldUpdate(prevState, nextState)) setValue(nextState);
             };
             return subscribe(listener);

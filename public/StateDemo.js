@@ -19,8 +19,9 @@ const initialState = {
 const state = createState(initialState, {persist: {key: 'stateDemo'}});
 
 const Foo = () => {
-    const [foo, merge] = state.useSelector('derp.foo');
-    console.log('foo updated')
+    // const [foo, merge] = state.useSelector('derp.foo');
+    const [foo, merge] = state.useSelector(({derp}) => derp.foo);
+    console.log('foo updated', foo)
     return (
         <h1>
             Foo: {foo}
@@ -40,14 +41,14 @@ const Bar = () => {
 
 const SomeNestedState = () => {
 
-    const [{s, blob, arr, arr0}, merge] = state.useSelector(() => ({
+    const [{s, blob, arr, arr0}, merge] = state.useSelector({
         s: 'some.nested.state',
         blob: 'some.nested.blob',
         arr: 'some.nested.arr',
         arr0: 'some.nested.arr[0]'
-    }));
+    });
 
-    console.log('some nested state updated', arr);
+    console.log('super specific state selections updated', arr);
 
     return (
         <>
@@ -71,7 +72,7 @@ const SomeNestedState = () => {
         </>
     )
 }
-
+let derp = 0;
 const MrArray = () => {
     const [arr] = state.useSelector('array');
 
@@ -82,7 +83,7 @@ const MrArray = () => {
             </h3>
             <br/>
             <button onClick={() => {
-                state.mergeInPath('array[0]', {id: 1, name: 'bar'})
+                state.mergeInPath('array[0]', {id: 1, name: `bar ${derp++}`})
             }}>
                 merge in path
             </button>
@@ -96,7 +97,7 @@ const Arr = () => {
     const [bar, merge] = state.useSelector(
         'some.nested.state,'
     );
-    console.log('Arr updated');
+    console.log('some nested state updateddddd');
     return (
         <>
             <h1>
@@ -106,7 +107,7 @@ const Arr = () => {
     )
 };
 
-let derp = 0;
+
 export default function StatePage() {
 
     return (
@@ -122,21 +123,27 @@ export default function StatePage() {
             <br/>
 
 
-            <button onClick={() => state.mergeState(s => ({derp: {foo: s.derp.foo + 1}}))}>
+            <button onClick={() => {
+                state.mergeState(s => ({
+                        derp: {
+                            foo:
+                                s.derp.foo + 1
+                        }
+                    })
+                );
+            }}>
                 FOO
             </button>
             <button onClick={() => state.mergeState(s => ({bar: s.bar + 1}))}>
                 BAR
             </button>
 
-            <button onClick={() => state.mergeInPath(() => ({
+            <button onClick={() => state.mergeInPath({
                 'derp.foo': 500,
                 'some.nested.state': derp++,
                 'some.nested.blob': _ => _ + 1,
-                'some.nested.arr': arr => {
-                    return [...arr, derp];
-                }
-            }))}>
+                'some.nested.arr': arr => [...arr, derp]
+            })}>
                 BAZ
             </button>
 
