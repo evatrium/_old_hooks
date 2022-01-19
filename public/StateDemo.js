@@ -107,6 +107,13 @@ const Arr = () => {
     )
 };
 
+const unsub = state.subscribeToSelection('derp.foo', (state) => {
+    console.log('******', state);
+});
+
+// setTimeout(()=>{
+//     unsub();
+// },2000);
 
 export default function StatePage() {
 

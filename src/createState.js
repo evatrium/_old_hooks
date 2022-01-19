@@ -140,30 +140,36 @@ export const createState = (state = {}, {merger = shallowMerger, persist, onChan
         mergeState
     });
 
+
+    const subscribeToSelection = (selector, cb, {shouldUpdate = propsChanged} = {}) => {
+        const initialValue = select(selector, state);
+        // if the initial result of what is selected is not a standard object state tree
+        // then just do a simple compare
+        // unless the shouldUpdate function is different than the default
+        if (!isObj(initialValue) && (shouldUpdate === propsChanged)) {
+            shouldUpdate = (prev, next) => prev !== next;
+        }
+        const listener = (newState, prev) => {
+            const prevState = selector ? select(selector, prev) : prev;
+            const nextState = selector ? select(selector, newState) : newState
+            if (shouldUpdate(prevState, nextState)) cb(nextState, prevState);
+        };
+        return subscribe(listener);
+    }
+
     const useSelector = (selector, {shouldUpdate = propsChanged} = {}) => {
         const mountedState = useIsMounted();
         const [value, setValue] = useState(() => select(selector, state));
-        useEffect(() => {
-            let simpleCompare = false;
-            // if the initial result of what is selected is not a standard object state tree
-            if(!isObj(value)) simpleCompare = true; // then just do a simple compare
-            // unless a shouldUpdate function is provided
-            if(shouldUpdate !== propsChanged) simpleCompare = false;
-            const listener = (newState, prev) => {
-                if (!mountedState.current) return;
-                const prevState = selector ? select(selector, prev) : prev;
-                const nextState = selector ? select(selector, newState) : newState
-                if (simpleCompare) (prevState !== nextState) && setValue(nextState);
-                else if (shouldUpdate(prevState, nextState)) setValue(nextState);
-            };
-            return subscribe(listener);
-        }, []);
-        return [value, mergeState]; //destructure for more options [value, {mergeState, mergeInPath, setState}]
+        const set = x => mountedState.current && setValue(x);
+        useEffect(() => subscribeToSelection(selector, set, {shouldUpdate}), []);
+        return [value, mergeState]; //destructure for more options: [value, {mergeState, mergeInPath, setState}]
     };
 
     const methods = {
         select,
-        subscribe, unsubscribe, notify,
+        subscribeToSelection,
+        subscribe, unsubscribe,
+        notify,
         getState, setState, mergeState, mergeInPath,
         useSelector,
         reset,

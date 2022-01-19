@@ -1,4 +1,4 @@
-export const data = [
+[
   {
     "id": 1,
     "first_name": "Raquel",
@@ -799,4 +799,4 @@ export const data = [
     "city": "North Bart",
     "ip": "65.177.149.249"
   }
-];
+]

@@ -1,6 +1,7 @@
-import {data} from "./data";
+import {wait} from "@iosio/util";
 
-let id = data.length;
+let data = []
+let id = 0;
 
 const makeItem = (first_name) => ({
     'id': id++,
@@ -13,22 +14,25 @@ const makeItem = (first_name) => ({
 
 const addItem = (first_name) => data.push(makeItem(first_name));
 
-[...Array(10000)].forEach((_, i) => {
-    addItem('rando-' + (data.length + i));
-});
+const fetchData = async () => {
+    if (!data.length) data = await import('./data.json');
+
+    id = data.length;
+
+    [...Array(10000)].forEach((_, i) => {
+        addItem('rando-' + (data.length + i));
+    });
+
+    await wait(200)
+}
+
 
 let first = true;
 export const fetchList = () => {
     return new Promise(r => {
+
         setTimeout(() => {
-            if (first) {
-                r(data);
-                first = false;
-            } else {
-                const morrreeepllzz = [...Array(10000)].map((_, i) =>
-                    makeItem('more-rando-' + (data.length + i)));
-                r([...data, ...morrreeepllzz]);
-            }
+
 
         }, 200);
     });

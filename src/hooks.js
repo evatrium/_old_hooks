@@ -447,7 +447,7 @@ export const useTextField = (
 ##################################
 ################################*/
 
-const useAsyncOption = {initialState: {}};
+const useAsyncOption = {initialState: {data: null, pending: false, error: null}};
 export const useAsync = (asyncFunc, options = useAsyncOption) => {
     const isMountedRef = useIsMounted();
     let [{data, pending, error}, mergeState] = useMergeState({
@@ -830,7 +830,6 @@ export const useSearchWorkerSearch = ({setResults, list = EMPTY_ARRAY, keys, deb
 };
 
 export const useSearchWorkerBase = ({list = EMPTY_ARRAY, keys, debounce} = {}) => {
-
     const [results, setResults] = useState(list);
     const search = useSearchWorkerSearch({setResults, list, keys, debounce});
     return {results, search}

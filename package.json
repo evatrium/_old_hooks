@@ -47,6 +47,6 @@
     "wmr": "^3.7.2"
   },
   "dependencies": {
-    "@iosio/util": "^2.0.29"
+    "@iosio/util": "^2.0.30"
   }
 }
