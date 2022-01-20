@@ -1,6 +1,9 @@
 import {createState} from '../src';
+import {deepMerge, getIn, isArray, isEqual, isFunc, isObject, isPrimitive, localStore} from "@iosio/util";
 
-const initialState = {
+
+const createInitialState = () => ({
+    funky: () => 0,
     array: [{id: 1, name: 'foo'}],
     derp: {
         foo: 123,
@@ -8,40 +11,72 @@ const initialState = {
     bar: 456,
     some: {
         nested: {
-            state: 'baz',
+            state: 0,
             blob: 1,
             arr: [0]
         }
     },
+});
+
+let initialState = createInitialState();
+const storeKey = 'state.some';
+const some = localStore.getItem(storeKey);
+if (some) initialState.some = deepMerge(initialState.some, some);
+const store = createState(initialState);
+store.subscribeToSelection('some', (state, prev) => {
+    localStore.setItemDebounced(storeKey, state)
+});
+localStore.subscribeToKey(storeKey, (data) => {
+    store.setInPath('some', data || createInitialState().some)
+});
+const reset = () => {
+    localStore.removeItem(storeKey);
+    store.reset();
+}
+
+const updateFoo = () => {
+    store.mergeState(s => ({
+        derp: {
+            foo: s.derp.foo + 1
+        }
+    }));
 };
-
-
-const state = createState(initialState, {persist: {key: 'stateDemo'}});
 
 const Foo = () => {
     // const [foo, merge] = state.useSelector('derp.foo');
-    const [foo, merge] = state.useSelector(({derp}) => derp.foo);
+    const [foo, merge] = store.useSelector(({derp}) => derp.foo);
     console.log('foo updated', foo)
     return (
-        <h1>
-            Foo: {foo}
-        </h1>
+        <>
+            <h1>
+                Foo: {foo}
+            </h1>
+
+            <button onClick={updateFoo}>
+                FOO
+            </button>
+        </>
     )
 };
 
 const Bar = () => {
-    const [bar, merge] = state.useSelector('bar');
+    const [bar, merge] = store.useSelector('bar');
     console.log('bar updated');
     return (
-        <h1>
-            Bar: {JSON.stringify(bar)}
-        </h1>
+        <>
+            <h1>
+                Bar: {JSON.stringify(bar)}
+            </h1>
+            <button onClick={() => store.mergeState(s => ({bar: s.bar + 1}))}>
+                BAR
+            </button>
+        </>
     )
 };
 
 const SomeNestedState = () => {
 
-    const [{s, blob, arr, arr0}, merge] = state.useSelector({
+    const [{s, blob, arr, arr0}, merge] = store.useSelector({
         s: 'some.nested.state',
         blob: 'some.nested.blob',
         arr: 'some.nested.arr',
@@ -54,7 +89,7 @@ const SomeNestedState = () => {
         <>
             <br/>
             <h1>
-                Some Nested State: {s}
+                Multi Nested State: {s}
             </h1>
             <br/>
             <h2>
@@ -68,14 +103,29 @@ const SomeNestedState = () => {
             <h3>
                 arr[0]: {arr0}
             </h3>
+            <div style={{display: 'flex'}}>
+
+                <button onClick={() =>
+                    store.setInPath({'some.nested.arr[0]': arr0 => (arr0 + 1)})
+                }>
+                    inc arr0
+                </button>
+                <button onClick={() => store.setInPath({
+                    'some.nested.state': num => (num + 2),
+                    'some.nested.blob': _ => _ + 1,
+                    'some.nested.arr': arr => [...arr, arr.length]
+                })}>
+                    BAZ
+                </button>
+            </div>
             <br/>
         </>
     )
 }
 let derp = 0;
 const MrArray = () => {
-    const [arr] = state.useSelector('array');
-
+    const [arr] = store.useSelector('array');
+    console.log('array updated')
     return (
         <>
             <h3>
@@ -83,9 +133,14 @@ const MrArray = () => {
             </h3>
             <br/>
             <button onClick={() => {
-                state.mergeInPath('array[0]', {id: 1, name: `bar ${derp++}`})
+                store.setInPath('array[0]', (obj) => ({
+                    ...obj,
+                    id: obj.id + 1,
+                    name: `foo`,
+                    bar: 'baz'
+                }))
             }}>
-                merge in path
+                set in path
             </button>
 
             <br/>
@@ -93,27 +148,9 @@ const MrArray = () => {
     )
 }
 
-const Arr = () => {
-    const [bar, merge] = state.useSelector(
-        'some.nested.state,'
-    );
-    console.log('some nested state updateddddd');
-    return (
-        <>
-            <h1>
-                Arr: {JSON.stringify(bar)}
-            </h1>
-        </>
-    )
-};
-
-const unsub = state.subscribeToSelection('derp.foo', (state) => {
-    console.log('******', state);
+const unsub = store.subscribeToSelection('derp.foo', (state) => {
+    console.log('subscription to derp.foo ******', store.getState());
 });
-
-// setTimeout(()=>{
-//     unsub();
-// },2000);
 
 export default function StatePage() {
 
@@ -123,45 +160,17 @@ export default function StatePage() {
             <Bar/>
             <SomeNestedState/>
 
-            <Arr/>
             <br/>
 
             <MrArray/>
             <br/>
 
-
-            <button onClick={() => {
-                state.mergeState(s => ({
-                        derp: {
-                            foo:
-                                s.derp.foo + 1
-                        }
-                    })
-                );
-            }}>
-                FOO
-            </button>
-            <button onClick={() => state.mergeState(s => ({bar: s.bar + 1}))}>
-                BAR
-            </button>
-
-            <button onClick={() => state.mergeInPath({
-                'derp.foo': 500,
-                'some.nested.state': derp++,
-                'some.nested.blob': _ => _ + 1,
-                'some.nested.arr': arr => [...arr, derp]
-            })}>
-                BAZ
-            </button>
+            <br/>
 
 
             <br/>
 
-            <button onClick={() => state.mergeInPath({'some.nested.arr[0]': arr0 => (arr0 + 1)})}>
-                inc arr0
-            </button>
-            <br/>
-            <button onClick={() => state.reset({initialState})}>
+            <button onClick={reset}>
                 reset
             </button>
         </>

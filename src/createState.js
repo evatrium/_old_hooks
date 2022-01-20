@@ -1,76 +1,37 @@
 import {
-    CreateLocalStore,
-    deepCopy,
+    copyDeep as deepCopy,
     getIn,
     getStateUpdate, isArray,
     isFunc,
     isObj,
     isString,
-    jsonParse, propsChanged,
-    setIn
+    setIn, isEqual, deepMerge,
 } from "@iosio/util";
-import {createContext, useEffect, useState} from "react";
-import {useIsMounted, shallowMerger} from "./hooks";
+import {useEffect, useState} from "react";
+import {useIsMounted} from "./hooks";
 
 
-export const createState = (state = {}, {merger = shallowMerger, persist, onChange} = {}) => {
+const isNotEqual = (a, b) => !isEqual(a, b);
+
+export const createState = (state = {}, {
+    merger = deepMerge,
+    selectorShouldUpdate = isNotEqual,
+    onChange
+} = {}) => {
 
     const originalState = deepCopy(state);
     state = deepCopy(state);
 
-    let storage;
-    let {persistor, debounceSet, key: storageKey, namespace} = persist || {};
-    let unsubscribeStorage = () => 0;
-    let resetting = false;
-
-    const isPersisted = isObj(persist) && isString(storageKey);
-
-    const onStorageChange = ({storageArea, key, newValue} = {}) => {
-        if (resetting) return;
-        if (storageArea === localStorage && key === storageKey) {
-            const oldValue = JSON.stringify(state);
-            if (oldValue !== newValue) {
-                const {data} = jsonParse(newValue);
-                setState(data || originalState);
-            }
-        }
-    };
-
-    const subscribeStorage = () => {
-        unsubscribeStorage();
-        unsubscribeStorage = storage?.subscribe ? storage?.subscribe(onStorageChange) : () => 0;
-    }
-
-    if (isPersisted) {
-        storage = persistor || CreateLocalStore({namespace: namespace || '', debounceSet: debounceSet || 200});
-        const stored = storage.getItem(storageKey);
-        if (isObj(stored)) state = stored;
-        subscribeStorage();
-    }
-
-    const clearStorage = () => storage.removeItem(storageKey);
-
     let listeners = [];
 
-    let prevState = {...(isFunc(state) ? state() : state)};
+    let prevState = {...state};
 
     const getState = () => state;
 
-    const reset = (
-        {
-            initialState,
-            clearStorage: clear = true,
-            ignoreNotify = false,
-            unsubscribeStorage: unsub
-        } = {}) => {
-        resetting = true;
-        isPersisted && unsub && unsubscribeStorage();
-        const nextState = initialState ? deepCopy(initialState) : deepCopy(originalState);
-        isPersisted && clear && clearStorage();
+    const reset = ({initialState, ignoreNotify = false,} = {}) => {
+        const nextState = deepCopy(initialState || originalState);
         setState(nextState, ignoreNotify);
-        resetting = false;
     };
-
 
     const unsubscribe = f => {
         listeners = listeners.filter(l => l !== f);
@@ -82,73 +43,66 @@ export const createState = (state = {}, {merger = shallowMerger, persist, onChan
     };
 
     const notify = () => {
-        for (let l in listeners) listeners[l](state, prevState)
+        for (let l in listeners) listeners[l](state, prevState);
     };
 
     const _setState = (next) => {
-        prevState = {...state};
-        isPersisted && !resetting && storage.setItemDebounced(storageKey, next);
+        prevState = state;
         state = next;
-        onChange && onChange(next, prevState);
+        onChange && onChange(state, prevState);
     };
 
-    const setState = (updater, ignoreNotify = false) => {
-        const nextState = getStateUpdate(updater, state);
+    const setState = (updater, ignoreNotify = false,) => {
+        const copyToMutate = deepCopy(state);
+        const nextState = getStateUpdate(updater, copyToMutate);
         _setState(nextState);
         if (!ignoreNotify) notify();
     };
 
     const mergeState = (updater, ignoreNotify = false) => {
-        const update = getStateUpdate(updater, state);
-        const nextState = merger(state, update);
-        setState(nextState, ignoreNotify);
+        const copyToMutate = deepCopy(state);
+        const update = getStateUpdate(updater, copyToMutate);
+        const nextState = merger(copyToMutate, update);
+        _setState(nextState)
+        if (!ignoreNotify) notify();
     };
 
-    const select = (selector, state = getState()) => {
-        if (!selector) return state;
-        if (isFunc(selector)) return selector(state);
+    const select = (selector, copyToMutate) => {
+        copyToMutate = copyToMutate || deepCopy(copyToMutate || state);
+        if (!selector) return copyToMutate;
+        if (isFunc(selector)) return selector(copyToMutate);
         if (isObj(selector)) {
             let out = {};
-            for (let key in selector) out[key] = select(selector[key], state);
+            for (let key in selector) out[key] = select(selector[key], copyToMutate);
             return out;
         }
-        if (isArray(selector)) return selector.map(s => select(s, state));
+        if (isArray(selector)) return selector.map(s => select(s, copyToMutate));
         if (isString(selector)) {
             let possibleMany = selector.split(',').map(s => s.trim()).filter(Boolean);
-            if (possibleMany.length > 1) return select(possibleMany, state);
-            return getIn(state, possibleMany[0], state);
+            if (possibleMany.length > 1) return select(possibleMany, copyToMutate);
+            return getIn(copyToMutate, possibleMany[0], copyToMutate);
         }
     };
 
-    const setInState = (nextState, path, updater) => {
+    const _setInState = (copyToMutate, path, updater) => {
         let branchUpdate = updater;
         if (isFunc(updater)) branchUpdate = updater(getIn(state, path, state));
-        return setIn(nextState, path, branchUpdate);
+        return setIn(copyToMutate, path, branchUpdate);
     };
 
-    const mergeInPath = (path, updater, ignoreNotify = false) => {
-        let nextState = {...state};
-        if (isFunc(path)) path = path(nextState);
-        if (isString(path)) nextState = setInState(nextState, path, updater);
-        if (isObj(path)) for (let key in path) nextState = setInState(nextState, key, path[key]);
-        setState(nextState, ignoreNotify);
+    const setInPath = (path, updater, ignoreNotify = false) => {
+        let copyToMutate = deepCopy(state);
+        // let originalCopyOfState = deepCopy(state);
+        if (isFunc(path)) path = path(copyToMutate);
+        if (isString(path)) copyToMutate = _setInState(copyToMutate, path, updater);
+        if (isObj(path)) for (let key in path) copyToMutate = _setInState(copyToMutate, key, path[key]);
+        _setState(copyToMutate);
+        if (!ignoreNotify) notify();
     };
 
-    Object.assign(mergeState, {
-        mergeInPath,
-        setState,
-        mergeState
-    });
+    Object.assign(mergeState, {setInPath, setState, mergeState});
 
-
-    const subscribeToSelection = (selector, cb, {shouldUpdate = propsChanged} = {}) => {
-        const initialValue = select(selector, state);
-        // if the initial result of what is selected is not a standard object state tree
-        // then just do a simple compare
-        // unless the shouldUpdate function is different than the default
-        if (!isObj(initialValue) && (shouldUpdate === propsChanged)) {
-            shouldUpdate = (prev, next) => prev !== next;
-        }
+    const subscribeToSelection = (selector, cb, {shouldUpdate = selectorShouldUpdate} = {}) => {
         const listener = (newState, prev) => {
             const prevState = selector ? select(selector, prev) : prev;
             const nextState = selector ? select(selector, newState) : newState
@@ -157,48 +111,22 @@ export const createState = (state = {}, {merger = shallowMerger, persist, onChan
         return subscribe(listener);
     }
 
-    const useSelector = (selector, {shouldUpdate = propsChanged} = {}) => {
+    const useSelector = (selector, {shouldUpdate = selectorShouldUpdate} = {}) => {
         const mountedState = useIsMounted();
         const [value, setValue] = useState(() => select(selector, state));
         const set = x => mountedState.current && setValue(x);
         useEffect(() => subscribeToSelection(selector, set, {shouldUpdate}), []);
-        return [value, mergeState]; //destructure for more options: [value, {mergeState, mergeInPath, setState}]
+        return [value, mergeState]; //destructure for more options: [value, {mergeState, setInPath, setState}]
     };
 
-    const methods = {
+    return {
         select,
         subscribeToSelection,
         subscribe, unsubscribe,
         notify,
-        getState, setState, mergeState, mergeInPath,
+        getState, setState, mergeState, setInPath,
         useSelector,
         reset,
-        subscribeStorage, unsubscribeStorage, clearStorage
-    };
-
-    const createProviderAndHook = (additionalMethods = {}) => {
-
-        const value = Object.assign(methods, additionalMethods);
-
-        const StateContext = createContext(value);
-
-        const useStateContext = () => useContext(StateContext);
-
-        const StateProvider = ({children}) => (
-            <StateContext.Provider value={value}>
-                {children}
-            </StateContext.Provider>
-        );
-
-        return [StateProvider, useStateContext]
-    };
-
-    const [StateProvider, useStateContext] = createProviderAndHook();
-
-    return {
-        ...methods,
-        createProviderAndHook,
-        StateProvider,
-        useStateContext
+        deepMerge
     }
 }

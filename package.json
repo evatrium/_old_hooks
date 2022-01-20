@@ -34,7 +34,8 @@
   "scripts": {
     "start": "wmr",
     "build": "microbundle --jsx React.createElement --define process.env.NODE_ENV=production --name iosioHooks",
-    "test": "exit 0"
+    "test": "exit 0",
+    "iosio": "npm uninstall @iosio/util && npm install @iosio/util"
   },
   "peerDependencies": {
     "react": "^17.0.2",
@@ -47,6 +48,6 @@
     "wmr": "^3.7.2"
   },
   "dependencies": {
-    "@iosio/util": "^2.0.30"
+    "@iosio/util": "^2.0.37"
   }
 }

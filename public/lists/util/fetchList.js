@@ -14,8 +14,11 @@ const makeItem = (first_name) => ({
 
 const addItem = (first_name) => data.push(makeItem(first_name));
 
-const fetchData = async () => {
-    if (!data.length) data = await import('./data.json');
+const fetchData = async (cb) => {
+    if (!data.length){
+        const results = await import('./data.json');
+        data = results.default
+    }
 
     id = data.length;
 
@@ -23,17 +26,17 @@ const fetchData = async () => {
         addItem('rando-' + (data.length + i));
     });
 
-    await wait(200)
+    await wait(200);
+
+    cb && cb(data);
 }
 
 
 let first = true;
 export const fetchList = () => {
     return new Promise(r => {
-
         setTimeout(() => {
-
-
+            fetchData(r);
         }, 200);
     });
 };

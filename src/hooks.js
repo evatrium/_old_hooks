@@ -304,6 +304,8 @@ export const useMuiMenuState = (
         contents = 'items',
         listWidth = 'auto',
         dropFrom = 'center',
+        ariaLabelOpen = 'Menu expanded',
+        ariaLabelClosed = `Select to access ${contents}`,
         menuProps: _menuProps = {}
     } = {}) => {
     const ref = useRef(null);
@@ -327,7 +329,7 @@ export const useMuiMenuState = (
         ref,
         onClick: open,
         onTouchStart: open,
-        'aria-label': `${ariaName}. ${isOpen ? 'Menu expanded' : `Select to access ${contents}`}`,
+        'aria-label': `${ariaName}. ${isOpen ? ariaLabelOpen : ariaLabelClosed}`,
     };
 
     const menuProps = {
@@ -601,7 +603,7 @@ export const useLocalStoreValue = (key, defaultValue, {setValue, value} = {}) =>
     const [val, set] = useState(() => localStore.getItem(key) || (isFunc(defaultValue) ? defaultValue() : defaultValue));
 
     const setIt = useCallback((value) => {
-        localStore.setItem(key, value);
+        localStore.setItemDebounced(key, value);
         set(value);
     }, [key])
 
