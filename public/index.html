@@ -1,76 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8" />
-	<title>search-worker</title>
-	<meta name="description" content="wow much speed" />
-	<meta name="viewport" content="width=device-width,initial-scale=1" />
-	<link rel="icon" href="data:" />
-	<style>
-		* {
-			padding: 0;
-			margin: 0;
-			box-sizing: border-box;
-		}
+    <meta charset="utf-8"/>
+    <title>search-worker</title>
+    <meta name="description" content="wow much speed"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <link rel="icon" href="data:"/>
+    <style>
+        :root {
+            --text: #afafbb;
+            --bg: #1f2022;
+            --primary: #6d80f8
+        }
 
-		html, body {
-			height: 100%;
-			width: 100%;
-			overflow-x: hidden;
-			background: #1f2022;
-			color: #afafbb;
-		}
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            animation: flash 500ms ease;
+        }
 
-		body {
-			font: 16px/1.21 'Helvetica Neue', arial, sans-serif;
-			font-weight: 300;
-		}
+        @keyframes flash {
+            from { box-shadow: inset 0 0 2px 2px rebeccapurple, 0 0 2px 2px rebeccapurple; }
+        }
 
-		a {
-			color: var(--text);
-			padding: 8px
-		}
-		a.active {
-			color: #6d80f8
-		}
-		button {
-			padding: 7px 10px;
-			background: rgba(255,255,255,0.1);
-			border: none;
-			cursor: pointer;
-			color: inherit;
-			font-weight: bold;
-		}
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+            background: var(--bg);
+            color: var(--text);
+        }
 
-		nav{
-			background: rgba(255,255,255,0.1);
-			padding: 16px;
-		}
+        body {
+            font: 16px/1.21 'Helvetica Neue', arial, sans-serif;
+            font-weight: 300;
+        }
 
-		.list {
-			height: calc(100vh - 200px);
-			width: 100%;
-			border: 1px solid #CCC;
-			overflow: auto;
-			-webkit-overflow-scrolling: touch;
-		}
+        h1, h2, h3, h4, h5, h6 {
+            line-height: 1.5;
+            padding-bottom: 8px;
+        }
 
-		.row {
-			display: flex;
-			position: relative;
-			height: 30px;
-			line-height: 30px;
-			padding: 0 20px;
-			overflow: hidden;
-		}
+        a {
+            color: var(--text);
+            padding: 8px
+        }
 
-		.col {
-			width: 20%;
-			overflow: hidden;
-		}
+        a.active {
+            color: var(--primary)
+        }
 
-	</style>
-	<link rel="modulepreload" as="script" href="/index.js" />
+        button {
+            padding: 7px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            cursor: pointer;
+            color: inherit;
+            font-weight: bold;
+        }
+
+        nav {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 16px;
+        }
+
+        .list {
+            height: calc(100vh - 200px);
+            width: 100%;
+            border: 1px solid #CCC;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .row {
+            display: flex;
+            position: relative;
+            height: 30px;
+            line-height: 30px;
+            padding: 0 20px;
+            overflow: hidden;
+        }
+
+        .col {
+            width: 20%;
+            overflow: hidden;
+        }
+
+    </style>
+    <link rel="modulepreload" as="script" href="/index.js"/>
 </head>
 <body>
 <script type="module" src="/index.js"></script>

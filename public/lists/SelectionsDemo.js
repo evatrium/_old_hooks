@@ -1,7 +1,7 @@
-import {useAsync, useMergeState, useSelectionHandler, useToggle} from "../../src";
+import {useAsync, useMergeState, useSelectionHandler} from "../../src";
 import {fetchList} from "./util/fetchList";
-import {excludeItemsFromAray, isArray} from "@iosio/util";
-import {useEffect, useMemo} from "preact/hooks";
+import {excludeItemsFromAray} from "@iosio/util";
+import {useEffect} from "preact/hooks";
 
 
 export const SelectionsDemo = () => {

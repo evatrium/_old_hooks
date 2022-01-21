@@ -1,38 +1,50 @@
 import {createState} from '../src';
-import {deepMerge, getIn, isArray, isEqual, isFunc, isObject, isPrimitive, localStore} from "@iosio/util";
 
 
 const createInitialState = () => ({
     funky: () => 0,
-    array: [{id: 1, name: 'foo'}],
     derp: {
-        foo: 123,
+        foo: 0,
+        rando: 0,
     },
-    bar: 456,
+    bar: 0,
+    bang: 0,
     some: {
         nested: {
             state: 0,
-            blob: 1,
+            blob: 0,
             arr: [0]
         }
     },
+    array: [{id: 0, name: 'foo'}],
 });
 
 let initialState = createInitialState();
-const storeKey = 'state.some';
-const some = localStore.getItem(storeKey);
-if (some) initialState.some = deepMerge(initialState.some, some);
-const store = createState(initialState);
-store.subscribeToSelection('some', (state, prev) => {
-    localStore.setItemDebounced(storeKey, state)
+
+const store = createState(initialState, {
+    persist: {
+        key: 'state',
+        /*
+            key: 'state.some',
+            selectPersistedState: ({some}) => some,
+            hydrate: (state, storedState) => {
+                console.log('hydrating stored state', storedState);
+                if (!storedState) storedState = createInitialState().some
+                return {...state, some: storedState}
+            }
+         */
+    },
 });
-localStore.subscribeToKey(storeKey, (data) => {
-    store.setInPath('some', data || createInitialState().some)
-});
-const reset = () => {
-    localStore.removeItem(storeKey);
-    store.reset();
-}
+
+const Box = ({style, ...props}) =>
+    <div style={{
+        overflow: 'hidden',
+        padding: 8,
+        border: '1px solid var(--text)',
+        marginTop: 8,
+        marginBottom: 8,
+        ...style
+    }} {...props}/>
 
 const updateFoo = () => {
     store.mergeState(s => ({
@@ -43,11 +55,10 @@ const updateFoo = () => {
 };
 
 const Foo = () => {
-    // const [foo, merge] = state.useSelector('derp.foo');
-    const [foo, merge] = store.useSelector(({derp}) => derp.foo);
+    const [foo] = store.useSelector(({derp}) => derp.foo);
     console.log('foo updated', foo)
     return (
-        <>
+        <Box>
             <h1>
                 Foo: {foo}
             </h1>
@@ -55,7 +66,7 @@ const Foo = () => {
             <button onClick={updateFoo}>
                 FOO
             </button>
-        </>
+        </Box>
     )
 };
 
@@ -63,20 +74,60 @@ const Bar = () => {
     const [bar, merge] = store.useSelector('bar');
     console.log('bar updated');
     return (
-        <>
+        <Box>
             <h1>
-                Bar: {JSON.stringify(bar)}
+                Bar: {bar}
             </h1>
-            <button onClick={() => store.mergeState(s => ({bar: s.bar + 1}))}>
+            <button onClick={() => merge(s => ({bar: s.bar + 1}))}>
                 BAR
             </button>
-        </>
+        </Box>
+    )
+};
+const Bang = () => {
+    const [[bang], {setState}] = store.useSelector(['bang']);
+    console.log('bang updated');
+    return (
+        <Box>
+            <h1>
+                Bang: {bang}
+            </h1>
+            <button onClick={() => setState(s => ({
+                ...s,
+                bang: s.bang + 1
+            }))}>
+                BANG
+            </button>
+        </Box>
+    )
+};
+
+const FooBarBang = () => {
+    let [[foo, bar, bang], mergeState] = store.useSelector('derp.foo,bar,bang');
+
+    const inc = () => mergeState({
+        derp: {
+            foo: foo + 1
+        },
+        bar: bar + 1,
+        bang: bang + 1
+    });
+
+    return (
+        <Box>
+            <h3>
+                {`Foo: ${foo} Bar: ${bar} Bang: ${bang}`}
+            </h3>
+            <button onClick={inc}>
+                FOO BAR BANG
+            </button>
+        </Box>
     )
 };
 
 const SomeNestedState = () => {
 
-    const [{s, blob, arr, arr0}, merge] = store.useSelector({
+    const [{s, blob, arr, arr0}, {setInPath}] = store.useSelector({
         s: 'some.nested.state',
         blob: 'some.nested.blob',
         arr: 'some.nested.arr',
@@ -86,52 +137,51 @@ const SomeNestedState = () => {
     console.log('super specific state selections updated', arr);
 
     return (
-        <>
-            <br/>
-            <h1>
-                Multi Nested State: {s}
-            </h1>
-            <br/>
-            <h2>
-                blob: {blob}
-            </h2>
-            <br/>
+        <Box>
             <h3>
-                arr: {JSON.stringify(arr)}
+                Some Nested State: {s}
             </h3>
-            <br/>
+
             <h3>
-                arr[0]: {arr0}
+                Blob: {blob}
+            </h3>
+
+            <h3>
+                Arr: {JSON.stringify(arr)}
+            </h3>
+
+            <h3>
+                Arr[0]: {arr0}
             </h3>
             <div style={{display: 'flex'}}>
 
-                <button onClick={() =>
-                    store.setInPath({'some.nested.arr[0]': arr0 => (arr0 + 1)})
-                }>
-                    inc arr0
+                <button style={{marginRight: 8}}
+                        onClick={() => setInPath({'some.nested.arr[0]': arr0 => (arr0 + 1)})}>
+                    Inc arr0
                 </button>
-                <button onClick={() => store.setInPath({
+
+                <button onClick={() => setInPath({
                     'some.nested.state': num => (num + 2),
                     'some.nested.blob': _ => _ + 1,
                     'some.nested.arr': arr => [...arr, arr.length]
                 })}>
-                    BAZ
+                    STATE BLOB ARR
                 </button>
             </div>
             <br/>
-        </>
+        </Box>
     )
 }
-let derp = 0;
+
 const MrArray = () => {
     const [arr] = store.useSelector('array');
     console.log('array updated')
     return (
-        <>
+        <Box>
             <h3>
-                arrrraayyyy {JSON.stringify(arr)}
+                Array: {JSON.stringify(arr)}
             </h3>
-            <br/>
+
             <button onClick={() => {
                 store.setInPath('array[0]', (obj) => ({
                     ...obj,
@@ -144,13 +194,17 @@ const MrArray = () => {
             </button>
 
             <br/>
-        </>
+        </Box>
     )
 }
 
-const unsub = store.subscribeToSelection('derp.foo', (state) => {
-    console.log('subscription to derp.foo ******', store.getState());
+const unsub = store.subscribeToSelection('derp.foo', (foo, prevFoo) => {
+    console.log('subscription to derp.foo ******', {foo, prevFoo});
 });
+setTimeout(()=>{
+    unsub();
+    console.log('setTimeout unsubscribed from selection subscription');
+},5000)
 
 export default function StatePage() {
 
@@ -158,21 +212,15 @@ export default function StatePage() {
         <>
             <Foo/>
             <Bar/>
+            <Bang/>
+            <FooBarBang/>
             <SomeNestedState/>
-
-            <br/>
-
             <MrArray/>
-            <br/>
-
-            <br/>
-
-
-            <br/>
-
-            <button onClick={reset}>
-                reset
-            </button>
+            <Box>
+                <button onClick={() => store.reset()}>
+                    reset
+                </button>
+            </Box>
         </>
     );
 }

@@ -11,7 +11,7 @@ import {
     localStore, eventListener, isString,
     isBrowser, jsonParse,
     shallowEqual,
-    isEqual as deepEqual
+    isEqual
 } from "@iosio/util";
 
 import {SearchWorker} from "search-worker";
@@ -142,7 +142,7 @@ export const useShallowEqualEffect = (f, deps) => {
 }
 
 export const useDeepEqualEffect = (f, deps) => {
-    useEqualEffect(deepEqual, f, deps)
+    useEqualEffect(isEqual, f, deps)
 }
 
 /*################################

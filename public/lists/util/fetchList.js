@@ -14,8 +14,8 @@ const makeItem = (first_name) => ({
 
 const addItem = (first_name) => data.push(makeItem(first_name));
 
-const fetchData = async (cb) => {
-    if (!data.length){
+export const fetchList = async (cb) => {
+    if (!data.length) {
         const results = await import('./data.json');
         data = results.default
     }
@@ -28,15 +28,7 @@ const fetchData = async (cb) => {
 
     await wait(200);
 
-    cb && cb(data);
+    data = [...data];
+
+    return data;
 }
-
-
-let first = true;
-export const fetchList = () => {
-    return new Promise(r => {
-        setTimeout(() => {
-            fetchData(r);
-        }, 200);
-    });
-};
