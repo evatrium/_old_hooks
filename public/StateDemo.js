@@ -55,7 +55,7 @@ const updateFoo = () => {
 };
 
 const Foo = () => {
-    const [foo] = store.useSelector(({derp}) => derp.foo);
+    const [foo] = store.use(({derp}) => derp.foo);
     console.log('foo updated', foo)
     return (
         <Box>
@@ -71,7 +71,7 @@ const Foo = () => {
 };
 
 const Bar = () => {
-    const [bar, merge] = store.useSelector('bar');
+    const [bar, merge] = store.use('bar');
     console.log('bar updated');
     return (
         <Box>
@@ -85,7 +85,7 @@ const Bar = () => {
     )
 };
 const Bang = () => {
-    const [[bang], {setState}] = store.useSelector(['bang']);
+    const [[bang], {setState}] = store.use(['bang']);
     console.log('bang updated');
     return (
         <Box>
@@ -103,7 +103,7 @@ const Bang = () => {
 };
 
 const FooBarBang = () => {
-    let [[foo, bar, bang], mergeState] = store.useSelector('derp.foo,bar,bang');
+    let [[foo, bar, bang], mergeState] = store.use('derp.foo,bar,bang');
 
     const inc = () => mergeState({
         derp: {
@@ -127,7 +127,7 @@ const FooBarBang = () => {
 
 const SomeNestedState = () => {
 
-    const [{s, blob, arr, arr0}, {setInPath}] = store.useSelector({
+    const [{s, blob, arr, arr0}, {setInPath}] = store.use({
         s: 'some.nested.state',
         blob: 'some.nested.blob',
         arr: 'some.nested.arr',
@@ -174,7 +174,7 @@ const SomeNestedState = () => {
 }
 
 const MrArray = () => {
-    const [arr] = store.useSelector('array');
+    const [arr] = store.use('array');
     console.log('array updated')
     return (
         <Box>

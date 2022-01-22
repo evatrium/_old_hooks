@@ -106,8 +106,6 @@ export const createState = (initialState = {}, {
     const setInPath = (path, updater, ignoreNotify) =>
         _commit(_setInPath(deepCopy(state), path, updater), ignoreNotify);
 
-    Object.assign(mergeState, {setInPath, setState, mergeState});
-
     const subscribeToSelection = (selector, callback, {shouldUpdate = selectorShouldUpdate} = {}) => {
         const listener = (nextState, prevState) => {
             let prevSelected = select(selector, prevState), nextSelected = select(selector, nextState);
@@ -116,12 +114,15 @@ export const createState = (initialState = {}, {
         return subscribe(listener);
     }
 
-    const useSelector = (selector, {shouldUpdate = selectorShouldUpdate} = {}) => {
+    Object.assign(mergeState, {setInPath, setState, mergeState});
+
+    // alias: use
+    const use = (selector, {shouldUpdate = selectorShouldUpdate} = {}) => {
         const mountedState = useIsMounted();
         const [value, setValue] = useState(() => select(selector));
         const set = x => mountedState.current && setValue(x);
         useEffect(() => subscribeToSelection(selector, set, {shouldUpdate}), []);
-        return [value, mergeState]; //destructure for more options: [value, {mergeState, setInPath, setState}]
+        return [value, mergeState]; // = [value, {mergeState, setInPath, setState}]
     };
 
     initialSubscribe && subscribePersistence();
@@ -132,7 +133,8 @@ export const createState = (initialState = {}, {
         subscribe, unsubscribe,
         notify,
         getState, setState, mergeState, setInPath,
-        useSelector,
+        use,
+        useSelector: use,
         reset,
         deepMerge,
         unsubscribePersistence,
