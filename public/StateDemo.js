@@ -156,7 +156,7 @@ const SomeNestedState = () => {
             <div style={{display: 'flex'}}>
 
                 <button style={{marginRight: 8}}
-                        onClick={() => setInPath({'some.nested.arr[0]': arr0 => (arr0 + 1)})}>
+                        onClick={() => setInPath('some.nested.arr[0]', arr0 + 1)}>
                     Inc arr0
                 </button>
 
@@ -201,10 +201,10 @@ const MrArray = () => {
 const unsub = store.subscribeToSelection('derp.foo', (foo, prevFoo) => {
     console.log('subscription to derp.foo ******', {foo, prevFoo});
 });
-setTimeout(()=>{
+setTimeout(() => {
     unsub();
     console.log('setTimeout unsubscribed from selection subscription');
-},5000)
+}, 5000)
 
 export default function StatePage() {
 

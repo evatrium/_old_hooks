@@ -5,7 +5,6 @@ import {
     setIn, isEqual, deepMerge, localStore, deepCopy, Subie
 } from "@iosio/util";
 
-
 const getStateUpdate = (updater, prev) => (isFunc(updater) ? updater(prev) : updater);
 
 const isNotEqual = (a, b) => !isEqual(a, b);
@@ -13,7 +12,7 @@ const isNotEqual = (a, b) => !isEqual(a, b);
 export const createState = (initialState = {}, {
     merger = deepMerge,
     selectorShouldUpdate = isNotEqual,
-    onChange,
+    interceptChange = (next, prev) => next,
     persist: {
         key: storageKey,
         selectPersistedState = s => s,
@@ -57,8 +56,7 @@ export const createState = (initialState = {}, {
 
     const _commit = (next, ignoreNotify = false) => {
         prevState = state;
-        state = next;
-        onChange && onChange(state, prevState);
+        state = interceptChange(next, prevState)
         if (!ignoreNotify) notify(state, prevState);
     };
 
@@ -82,7 +80,7 @@ export const createState = (initialState = {}, {
         }
         if (isArray(selector)) {
             let out = [];
-            for (let s in selector) out.push(select(selector[s], _state))
+            for (let s = 0; s < selector.length; s++) out.push(select(selector[s], _state))
             return out;
         }
         if (isString(selector)) {
