@@ -38,8 +38,7 @@
     "iosio": "npm uninstall @iosio/util && npm install @iosio/util"
   },
   "peerDependencies": {
-    "react": "^17.0.2",
-    "search-worker": "^1.0.8"
+    "react": "^17.0.2"
   },
   "devDependencies": {
     "@iosio/react-router": "^1.0.12",
@@ -48,6 +47,7 @@
     "wmr": "^3.7.2"
   },
   "dependencies": {
-    "@iosio/util": "^2.0.38"
+    "@iosio/util": "^2.0.38",
+    "search-worker": "^1.0.8"
   }
 }
