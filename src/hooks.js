@@ -145,6 +145,14 @@ export const useDeepEqualEffect = (f, deps) => {
     useEqualEffect(isEqual, f, deps)
 }
 
+export const useDeepEqualMemo = (f, deps) => {
+    const ref = useRef([])
+    if (!isEqual(ref.current, deps)) {
+        ref.current = deps
+    }
+    return useMemo(f, ref.current);
+}
+
 /*################################
 ##################################
 
