@@ -480,7 +480,7 @@ export const useAsync = (asyncFunc, options = useAsyncOption) => {
         useEffect(() => {
             execute(...args);
         }, [stringify(args)]);
-        return {data, pending, error};
+        return {data, pending, error, execute};
     };
 
     return {
