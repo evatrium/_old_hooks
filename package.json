@@ -1,6 +1,6 @@
 {
   "name": "@iosio/hooks",
-  "version": "1.0.44",
+  "version": "1.0.45",
   "description": "react hooks",
   "type": "module",
   "source": "src/index.js",
