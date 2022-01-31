@@ -1,7 +1,7 @@
 import {useRef, useCallback, useMemo} from 'react';
 import {useDeepEqualEffect, useIsMounted, useMergeState, useUpdatedRef, useWillUnmount} from "./hooks";
 import {createState} from './createState';
-import {getStateUpdate, isFunc} from "@iosio/util";
+import {getStateUpdate, isFunc, tryCatch} from "@iosio/util";
 
 export const asyncStateTemplate = (next = {}) => ({
     pending: false,
@@ -29,11 +29,11 @@ export const pendingAsyncState = ({cache, lastRefreshDate, keepCacheOnData} = {}
         completed: false
     });
 
-export const successAsyncState = ({data, lastRefreshDate} = {}) =>
+export const successAsyncState = ({data} = {}) =>
     asyncStateTemplate({
         data,
         cache: data,
-        lastRefreshDate,
+        lastRefreshDate: Date.now(),
         cacheThenData: data,
         completed: true,
     });
@@ -76,31 +76,15 @@ export const AsyncState = (
         const prevState = getState();
         const current = prevState[argsKey] || asyncStateTemplate();
         const {cache, lastRefreshDate} = current; // items to persist through the lifecycle
-        mergeState({
-            [argsKey]: pendingAsyncState({
-                cache,
-                lastRefreshDate
-            })
-        });
-
+        mergeState({[argsKey]: pendingAsyncState({cache, lastRefreshDate})});
         try {
             let results = await _asyncFunc(...args);
             let data = await altFormatter(results, args);
-            mergeState({
-                [argsKey]: successAsyncState({
-                    data,
-                    lastRefreshDate: Date.now()
-                })
-            });
+            mergeState({[argsKey]: successAsyncState({data})});
             return {data}
         } catch (error) {
-            mergeState({
-                [argsKey]: failAsyncState({
-                    error: altFormatError(error, args),
-                    cache,
-                    lastRefreshDate
-                })
-            });
+            console.log(error.stack)
+            mergeState({[argsKey]: failAsyncState({error: altFormatError(error, args), cache, lastRefreshDate})});
             return {error}
         }
     }
@@ -118,11 +102,8 @@ export const AsyncState = (
         const [localState, mergeLocal] = useMergeState(() => {
             let state = getState()[argsKeyRef.current] || asyncStateTemplate();
             if (immediate) state = pendingAsyncState(state);
-            // silently initialize the state ????
-            mergeState(
-                {[argsKeyRef.current]: state},
-                // true // ignore notify
-            );
+            // silently initialize the state ????     // true // ignore notify
+            mergeState({[argsKeyRef.current]: state});
             return state;
         });
 
@@ -172,14 +153,6 @@ export const AsyncState = (
             if (immediate) isFunc(If) ? If(...altArgs) && execute(...altArgs) : execute(...altArgs);
         }, altArgs);
 
-        // const executeEffectRef = useRef((...args) => {
-        //     useDeepEqualEffect(() => {
-        //         isFunc(If) ? If(...args) && execute(...args) : execute(...args);
-        //     }, args);
-        // });
-        //
-        // const useExecuteEffect = executeEffectRef.current;
-
         const useExecuteEffect = (...args) => {
             useDeepEqualEffect(() => {
                 isFunc(If) ? If(...args) && execute(...args) : execute(...args);
@@ -217,5 +190,41 @@ export const useAsyncState = (fn, {asyncFuncUpdates, ...options} = {}) => {
     const instance = useMemo(() => AsyncState(fn, {singleLifeCycle: true, ...options}), []);
     useMemo(() => asyncFuncUpdates && instance.setAsyncFunc(fn), [fn]);
     return instance.use();
+}
+
+
+const useAsyncOptions = {initialState: {data: null, pending: false, error: null}, tc: false};
+
+export const useAsync = (asyncFunc, options = useAsyncOptions) => {
+
+    let [{data, pending, error}, mergeState] = useMergeState({
+        data: undefined, pending: false, error: undefined,
+        ...options?.initialState
+    });
+    const isMountedRef = useIsMounted();
+    const execute = useCallback(async (...args) => {
+        isMountedRef.current && mergeState({pending: true, error: null});
+        const results = await tryCatch(asyncFunc(...args));
+        isMountedRef.current && mergeState({...results, pending: false});
+        return results
+    }, [asyncFunc, mergeState, isMountedRef]);
+
+    const returnOptions = {
+        data, pending, error,
+        execute,
+        mergeState,
+    };
+
+    const useExecuteEffect = (...args) => {
+        useDeepEqualEffect(() => {
+            execute(...args);
+        }, args);
+        return returnOptions;
+    };
+
+    return {
+        useExecuteEffect,
+        ...returnOptions
+    }
 }
 

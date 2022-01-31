@@ -3,6 +3,7 @@ import {SearchWorkerDemo} from "./lists/SearchWorkerDemo";
 import {SelectionsDemo} from "./lists/SelectionsDemo";
 import {ActiveLinkage, useRouter} from "@iosio/react-router";
 import StatePage from "./StateDemo";
+import AsyncStatePage from "./AsyncStateDemo";
 // note: ActiveLinkage is experimental
 
 const pathMap = {
@@ -25,7 +26,11 @@ const pathMap = {
     '/state':{
         title: 'State',
         Route: StatePage
-    }
+    },
+    '/async-state':{
+        title: 'Async State',
+        Route: AsyncStatePage
+    },
 }
 
 

@@ -116,7 +116,7 @@ export const createState = (initialState = {}, {
 
     Object.assign(mergeState, {setInPath, setState, mergeState});
 
-    // alias: use
+    // alias: useSelector
     const use = (selector, {shouldUpdate = selectorShouldUpdate} = {}) => {
         const mountedState = useIsMounted();
         const [value, setValue] = useState(() => select(selector));

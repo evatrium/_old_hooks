@@ -203,7 +203,7 @@ const unsub = store.subscribeToSelection('derp.foo', (foo, prevFoo) => {
 });
 setTimeout(() => {
     unsub();
-    console.log('setTimeout unsubscribed from selection subscription');
+    console.log('setTimeout unsubscribed from selection subscription **state demo page**');
 }, 5000)
 
 export default function StatePage() {

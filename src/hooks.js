@@ -452,71 +452,11 @@ export const useTextField = (
 /*################################
 ##################################
 
-             ASYNC
+            MISC
 
 ##################################
 ################################*/
 
-const useAsyncOption = {initialState: {data: null, pending: false, error: null}};
-export const useAsync = (asyncFunc, options = useAsyncOption) => {
-    const isMountedRef = useIsMounted();
-    let [{data, pending, error}, mergeState] = useMergeState({
-        data: null, pending: false, error: null,
-        ...options.initialState
-    });
-    const execute = useCallback(async (...args) => {
-        isMountedRef.current && mergeState({pending: true, error: null});
-        try {
-            const result = await asyncFunc(...args);
-            isMountedRef.current && mergeState({data: result, pending: false});
-            return {data: result}
-        } catch (error) {
-            isMountedRef.current && mergeState({error, pending: false});
-            return {error}
-        }
-    }, [asyncFunc, mergeState, isMountedRef]);
-
-    const useExecuteEffect = (...args) => {
-        useEffect(() => {
-            execute(...args);
-        }, [stringify(args)]);
-        return {data, pending, error, execute};
-    };
-
-    return {
-        data, pending, error,
-        execute, useExecuteEffect,
-        mergeState,
-    }
-}
-
-const AsyncTriedAndCaught = async () => ({data: null, error: null});
-
-export const useAsyncTC = (asyncWithTryCatch = AsyncTriedAndCaught, options = useAsyncOption) => {
-    const isMountedRef = useIsMounted();
-    let [{data, pending, error}, mergeState] = useMergeState({
-        data: null, pending: false, error: null,
-        ...options.initialState
-    });
-    const execute = useCallback(async (...args) => {
-        isMountedRef.current && mergeState({pending: true, error: null});
-        const {data, error} = await asyncWithTryCatch(...args);
-        isMountedRef.current && mergeState({data, error, pending: false});
-        return {data, error};
-    }, [asyncWithTryCatch, mergeState, isMountedRef]);
-
-    const useExecuteEffect = (...args) => {
-        useEffect(() => {
-            execute(...args);
-        }, [stringify(args)])
-    };
-
-    return {
-        data, pending, error,
-        execute, useExecuteEffect,
-        mergeState,
-    }
-}
 
 
 export const useLoaded = ({crossOrigin, referrerPolicy, src, srcSet} = {}) => {
