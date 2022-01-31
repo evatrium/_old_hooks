@@ -4,9 +4,7 @@
   "description": "react hooks",
   "type": "module",
   "source": "src/index.js",
-  "module": "./dist/hooks.module.js",
-  "main": "./dist/hooks.umd.js",
-  "exports": "./dist/hooks.modern.js",
+  "main": "./dist/hooks.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/iosio/hooks.git"
@@ -26,7 +24,7 @@
   ],
   "scripts": {
     "start": "wmr",
-    "build": "microbundle src/index.js --jsx React.createElement --sourcemap false --no-compress --define process.env.NODE_ENV=production --name iosioHooks",
+    "build": "microbundle src/index.js -o dist/hooks.js --jsx React.createElement --no-pkg-main -f modern --sourcemap false --no-compress --define process.env.NODE_ENV=production --name iosioHooks",
     "test": "exit 0",
     "iosio": "npm uninstall @iosio/util @iosio/react-router search-worker && npm install @iosio/util search-worker && npm install @iosio/react-router --save-dev"
   },
@@ -34,13 +32,13 @@
     "react": "^17.0.2"
   },
   "devDependencies": {
-    "@iosio/react-router": "^1.0.16",
+    "@iosio/react-router": "^1.0.18",
     "microbundle": "^0.14.1",
     "preact": "^10.5.15",
     "wmr": "^3.7.2"
   },
   "dependencies": {
     "@iosio/util": "^2.0.54",
-    "search-worker": "^1.0.8"
+    "search-worker": "^1.0.10"
   }
 }
