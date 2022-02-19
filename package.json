@@ -32,13 +32,13 @@
     "react": "^17.0.2"
   },
   "devDependencies": {
-    "@iosio/react-router": "^1.0.20",
+    "@iosio/react-router": "^1.0.21",
     "microbundle": "^0.14.1",
     "preact": "^10.5.15",
     "wmr": "^3.7.2"
   },
   "dependencies": {
-    "@iosio/util": "^2.0.56",
+    "@iosio/util": "^2.0.57",
     "search-worker": "^1.0.10"
   }
 }
