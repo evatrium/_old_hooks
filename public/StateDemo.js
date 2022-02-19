@@ -46,14 +46,39 @@ const Box = ({style, ...props}) =>
         ...style
     }} {...props}/>
 
-const updateFoo = () => {
+const updateRando = () => {
     store.mergeState(s => ({
         derp: {
-            foo: s.derp.foo + 1
+            ...s.derp,
+            rando: s.derp.rando + 1,
         }
     }));
 };
 
+const Rando = () => {
+    const [rando] = store.use(({derp}) => derp.rando);
+    console.log('rando updated', rando)
+    return (
+        <Box>
+            <h1>
+                Rando: {rando}
+            </h1>
+
+            <button onClick={updateRando}>
+                DERP.RANDO
+            </button>
+        </Box>
+    )
+};
+
+const updateFoo = () => {
+    store.mergeState(s => ({
+        derp: {
+            ...s.derp,
+            foo: s.derp.foo + 1
+        }
+    }));
+};
 const Foo = () => {
     const [foo] = store.use(({derp}) => derp.foo);
     console.log('foo updated', foo)
@@ -64,7 +89,7 @@ const Foo = () => {
             </h1>
 
             <button onClick={updateFoo}>
-                FOO
+                DERP.FOO
             </button>
         </Box>
     )
@@ -105,13 +130,14 @@ const Bang = () => {
 const FooBarBang = () => {
     let [[foo, bar, bang], mergeState] = store.use('derp.foo,bar,bang');
 
-    const inc = () => mergeState({
+    const inc = () => mergeState((s) => ({
         derp: {
+            ...s.derp,
             foo: foo + 1
         },
         bar: bar + 1,
         bang: bang + 1
-    });
+    }));
 
     return (
         <Box>
@@ -210,6 +236,7 @@ export default function StatePage() {
 
     return (
         <>
+            <Rando/>
             <Foo/>
             <Bar/>
             <Bang/>
