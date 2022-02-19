@@ -1,6 +1,6 @@
 import {useRef, useCallback, useMemo} from 'react';
-import {useDeepEqualEffect, useIsMounted, useMergeState, useUpdatedRef, useWillUnmount} from "./hooks";
-import {createState} from './createState';
+import {useDeepEqualEffect, useIsMounted, useMergeState, useUpdatedRef, useWillUnmount} from "./hooks.js";
+import {createState} from './createState.js';
 import {getStateUpdate, isFunc, tryCatch} from "@iosio/util";
 
 export const asyncStateTemplate = (next = {}) => ({

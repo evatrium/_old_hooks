@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {useIsMounted} from "./hooks";
+import {useIsMounted} from "./hooks.js";
 import {
     getIn, isArray, isFunc, isObj, isString,
     setIn, isEqual, deepMerge, localStore, deepCopy, Subie
