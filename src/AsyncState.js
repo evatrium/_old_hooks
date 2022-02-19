@@ -102,8 +102,9 @@ export const AsyncState = (
         const [localState, mergeLocal] = useMergeState(() => {
             let state = getState()[argsKeyRef.current] || asyncStateTemplate();
             if (immediate) state = pendingAsyncState(state);
-            // silently initialize the state ????     // true // ignore notify
-            mergeState({[argsKeyRef.current]: state});
+            // silently initialize the state ????
+            // ..since this state update happens before mounting, i believe it wont trigger an unnecessary extra render
+            mergeState({[argsKeyRef.current]: state},/*true*/);
             return state;
         });
 

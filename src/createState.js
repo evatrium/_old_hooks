@@ -10,7 +10,8 @@ const getStateUpdate = (updater, prev) => (isFunc(updater) ? updater(prev) : upd
 const isNotEqual = (a, b) => !isEqual(a, b);
 
 export const createState = (initialState = {}, {
-    merger = deepMerge,
+    merger = (target, source, options) => ({...target, ...source}),
+    mergerOptions,
     selectorShouldUpdate = isNotEqual,
     interceptChange = (next, prev) => next,
     persist: {
@@ -63,10 +64,10 @@ export const createState = (initialState = {}, {
     const setState = (updater, ignoreNotify) =>
         _commit(getStateUpdate(updater, state), ignoreNotify);
 
-    const mergeState = (updater, ignoreNotify) => {
+    const mergeState = (updater, ignoreNotify, _mergerOptions = mergerOptions) => {
         const copyToMutate = deepCopy(state);
         const update = getStateUpdate(updater, copyToMutate);
-        const nextState = merger(copyToMutate, update);
+        const nextState = merger(copyToMutate, update, _mergerOptions);
         _commit(nextState, ignoreNotify)
     };
 
